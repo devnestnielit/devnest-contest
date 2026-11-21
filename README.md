@@ -1,4 +1,13 @@
-# FirstByte — DevNest Contests (Lite v14, Supabase wired)
+# FirstByte — DevNest Contests (Lite v15, Supabase wired)
+
+## Combined certificate, Prev/Next, scroll fix, Certopus CSV (v15)
+- **One combined certificate, not one per question.** The results page no longer shows a "Certificate" link on every submission row. There is a single "Get Certificate of Participation" button, and the certificate page (`#/certificate`, no id) uses your FIRST submission — one certificate for the whole contest, with the same certificate ID and date no matter which question you open it from.
+- **Previous / Next buttons while solving.** The arena now has "← Previous" and "Next →" buttons at the top (next to "← All questions") and at the bottom (after Submit). They move to the previous/next question in the Problems list. Previous is disabled on question 1, Next is disabled on the last question. They go through the same unsaved-code warning as leaving a question, so you cannot lose code by tapping Next by mistake.
+- **Back to Home lands on the Problems section.** Opening a question and clicking "← All questions" now scrolls the home page straight down to the Problems table instead of landing at the top.
+- **Certopus certificates (Admin → Certopus certificates).** After you bulk-issue certificates in Certopus, upload the Certopus export CSV here. The site matches each verification link to a participant by email and stores it as `cert_url` on that participant. Each participant then gets a "View Verified Certificate ↗" button that opens their own public Certopus page in a new tab (anyone can verify it, no login needed). Participants without a link still get the built-in certificate, and the Admin → Participants table shows a "Certopus" column (✓ Link or —). The importer looks for a header containing "email" and a header containing "verif" (or "certificate"/"credential" with "url"/"link"); if it cannot find them it shows the headers it saw. It reports how many links were saved, which emails were not participants, and how many rows were skipped. You can remove one link (per row) or clear them all.
+- **After deploying v15, run this ALTER** in the Supabase SQL Editor (the site works without it, but the Certopus links will not sync to the shared database until it exists — the link is kept in the admin's browser until then):
+  `alter table public.firstbyte_users add column if not exists cert_url text;`
+- The v14 ALTERs (cert_open, cert_image) are still needed if you have not run them yet — see the v14 section below.
 
 ## Copy-paste block, certificate control, contest look (v14)
 - **Copy & paste are blocked for participants while the contest is live** (copy, cut, paste and right-click), with a short message when they try. The Admin panel is exempt, so the admin can still copy and paste there. Before the contest starts and after it ends, copy-paste works normally.
@@ -125,6 +134,3 @@ node server.cjs
 - `certificate.jpg` — official FirstByte certificate design (name + date are overlaid by the site)
 - `vercel.json` — static-site config
 - `README.md` — this file
-#   d e v n e s t - c o n t e s t  
- #   d e v n e s t - c o n t e s t  
- 

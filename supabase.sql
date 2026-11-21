@@ -11,12 +11,15 @@ create table if not exists public.firstbyte_users (
   name text not null,
   email text not null unique,
   reg_no text,
+  cert_url text,
   pass_hash text not null,
   created_at timestamptz not null default now()
 );
 
 -- If the tables already exist (created before v8), run this once instead:
 alter table public.firstbyte_users add column if not exists reg_no text;
+-- If the tables already exist (created before v15), run this once too:
+alter table public.firstbyte_users add column if not exists cert_url text;
 -- If the tables already exist (created before v9), run these once too:
 alter table public.firstbyte_config add column if not exists base jsonb not null default '{"Easy":100,"Medium":150,"Hard":200}'::jsonb;
 alter table public.firstbyte_config add column if not exists wrong_penalty int not null default 10;

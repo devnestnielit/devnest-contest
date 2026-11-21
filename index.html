@@ -116,8 +116,8 @@ async function cloudInsert(table, rows){
   const r = await fetch(SUPABASE_URL+"/rest/v1/"+table, {method:"POST", headers:Object.assign(cloudHeaders(), {"Prefer":"return=minimal"}), body:JSON.stringify(rows)});
   if(!r.ok) throw new Error("POST "+table+" HTTP "+r.status);
 }
-function userToRow(u){ return {name:u.name, email:u.email, reg_no:u.regNo||null, pass_hash:u.passHash}; }
-function userFromRow(r){ return {name:r.name, email:r.email, regNo:r.reg_no||"", passHash:r.pass_hash, createdAt:r.created_at}; }
+function userToRow(u){ return {name:u.name, email:u.email, reg_no:u.regNo||null, pass_hash:u.passHash, cert_url:u.certUrl||null}; }
+function userFromRow(r){ return {name:r.name, email:r.email, regNo:r.reg_no||"", passHash:r.pass_hash, certUrl:r.cert_url||"", createdAt:r.created_at}; }
 function subToRow(s){ return {id:s.id, cert_id:s.certId, name:s.name, email:s.email, question_id:s.questionId, question_title:s.questionTitle, language:s.language, code:s.code, verify:s.verify, auto:!!s.auto, submitted_at:s.submittedAt, contest_title:s.contestTitle||"FirstByte"}; }
 function subFromRow(r){ return {id:r.id, certId:r.cert_id, name:r.name, email:r.email, questionId:r.question_id, questionTitle:r.question_title, language:r.language, code:r.code, verify:r.verify, auto:r.auto, submittedAt:r.submitted_at, contestTitle:r.contest_title}; }
 function progToRows(p){ const rows=[]; for(const email in p) for(const qid in p[email]){ const r=p[email][qid]; rows.push({email:email, question_id:qid, first_opened_at:r.firstOpenedAt, attempts:r.attempts||0, wrong:r.wrong||0, solved_at:r.solvedAt, solve_seconds:r.solveSeconds}); } return rows; }
@@ -142,7 +142,7 @@ function cloudPush(key){
   pushChains[key]=(pushChains[key]||Promise.resolve()).then(()=>cloudPushNow(key)).catch(()=>{ cloudStatus="error"; setDbStatus(); });
 }
 async function cloudPushNow(key){
-  if(key===K_USERS){ const rows=loadJ(K_USERS,[]).map(userToRow); try{ await cloudUpsert("firstbyte_users", rows, "email"); }catch(e){ await cloudUpsert("firstbyte_users", rows.map(r=>{ const o=Object.assign({},r); delete o.reg_no; return o; }), "email"); } }
+  if(key===K_USERS){ const rows=loadJ(K_USERS,[]).map(userToRow); try{ await cloudUpsert("firstbyte_users", rows, "email"); }catch(e){ await cloudUpsert("firstbyte_users", rows.map(r=>{ const o=Object.assign({},r); delete o.reg_no; delete o.cert_url; return o; }), "email"); } }
   if(key===K_CFG){ const row=cfgToRow(loadCfg()); try{ await cloudUpsert("firstbyte_config", [row], "id"); }catch(e){ const o=Object.assign({},row); delete o.base; delete o.wrong_penalty; delete o.minute_penalty; delete o.cleared_at; delete o.cert_open; delete o.cert_image; await cloudUpsert("firstbyte_config", [o], "id"); } }
   if(key===K_PROG) await cloudUpsert("firstbyte_progress", progToRows(loadJ(K_PROG,{})), "email,question_id");
   if(key===K_SUB){
@@ -317,7 +317,7 @@ function route(){
   if(parts[0]==="auth") return renderAuth(parts[1]||"login");
   if(parts[0]==="arena") return renderArena(parts[1]);
   if(parts[0]==="submitted") return renderSubmitted();
-  if(parts[0]==="certificate") return renderCertificate(parts[1]);
+  if(parts[0]==="certificate") return renderCertificate();
   if(parts[0]==="admin") return renderAdmin();
   return renderHome();
 }
@@ -383,11 +383,12 @@ function renderHome(){
     ? '<div class="card"><h2>Welcome, '+esc(u.name)+'</h2><p class="muted">Logged in as '+esc(u.email)+(u.regNo?' · Registration No: <b>'+esc(u.regNo)+'</b>':"")+'</p>'+(ended?'<p style="margin-top:8px"><b>Results are out!</b> <a href="#/submitted">View your score &amp; certificate →</a></p>':certVisible(cfg)?'<p style="margin-top:8px"><b>Your certificate is available!</b> <a href="#/submitted">Get your certificate →</a> Your score will appear here after the contest ends.</p>':'<p style="margin-top:8px">Your score and certificate will appear here after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b>. <a href="#/submitted">My submissions →</a></p>')+'</div>'
     : '<div class="card"><h2>Login to participate</h2><p class="muted">FirstByte is live for a few days only. Create an account with your email and a password — your submissions, score and certificate belong to that login.</p><p style="margin-top:12px"><a class="btn" href="#/auth/signup">Sign up</a> <a class="btn ghost" href="#/auth/login">Login</a></p></div>')
   +'<div class="card"><h2>How the contest works</h2><ol style="padding-left:20px;color:var(--muted)"><li><b>Sign up</b> with your email — one account for everything.</li><li><b>Open a question</b>, write C or Python, click Run &amp; Verify — the site runs your code and checks it. Submit before the timer ends.</li><li><b>After the contest ends</b>, come back here to see your score and download your Certificate of Participation.</li></ol></div>'
-  +'<div class="card"><h2>Problems ('+cfg.questions.length+') — C &amp; Python only</h2><table><tr><th>#</th><th>Problem</th><th>Difficulty</th><th>Points</th><th>Status</th><th></th></tr>'+cfg.questions.map((q,i)=>{ const r=u?(loadProg()[u.email]||{})[q.id]:null; const tag=r&&r.solvedAt?'<span class="pass">✓ Solved</span>':r&&r.attempts?'<span class="small">Attempted ('+r.attempts+')</span>':'<span class="small">—</span>'; return '<tr><td>'+(i+1)+'</td><td><b>'+esc(q.title)+'</b><div class="small">'+esc(q.statement.slice(0,90))+'…</div></td><td>'+diffBadge(q.difficulty)+'</td><td>'+basePts(cfg,q.difficulty)+'</td><td>'+tag+'</td><td><button class="btn ghost" data-q="'+q.id+'">Open →</button></td></tr>'; }).join("")+'</table></div>'
+  +'<div class="card" id="problems"><h2>Problems ('+cfg.questions.length+') — C &amp; Python only</h2><table><tr><th>#</th><th>Problem</th><th>Difficulty</th><th>Points</th><th>Status</th><th></th></tr>'+cfg.questions.map((q,i)=>{ const r=u?(loadProg()[u.email]||{})[q.id]:null; const tag=r&&r.solvedAt?'<span class="pass">✓ Solved</span>':r&&r.attempts?'<span class="small">Attempted ('+r.attempts+')</span>':'<span class="small">—</span>'; return '<tr><td>'+(i+1)+'</td><td><b>'+esc(q.title)+'</b><div class="small">'+esc(q.statement.slice(0,90))+'…</div></td><td>'+diffBadge(q.difficulty)+'</td><td>'+basePts(cfg,q.difficulty)+'</td><td>'+tag+'</td><td><button class="btn ghost" data-q="'+q.id+'">Open →</button></td></tr>'; }).join("")+'</table></div>'
   +'<div class="card"><h2>Rules &amp; scoring</h2><ul style="padding-left:20px;color:var(--muted)">'+cfg.rules.map(r=>"<li>"+esc(r)+"</li>").join("")+'</ul><p class="small" style="margin-top:10px">Score per question = base points − wrong-attempt penalty per wrong attempt − per-minute penalty per minute taken (minimum 0). Final score = (total earned ÷ total possible) × 100. Average solve time is the mean of the times for the questions you solved.</p></div>'
   +(subs.length?'<div class="card"><h2>Your submissions ('+subs.length+')</h2><p><a href="#/submitted">View my submissions →</a></p></div>':"");
   startTimer(cfg);
   document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{ if(!currentUser()){ go("#/auth/login"); return; } go("#/arena/"+b.dataset.q); });
+  if((location.hash||"")==="#/problems"){ const el=document.getElementById("problems"); if(el) el.scrollIntoView(); }
 }
 </script>
 <script>
@@ -478,24 +479,25 @@ function renderArena(qid){
   const cfg=loadCfg(); const u=currentUser();
   if(!u){ $("#app").innerHTML='<div class="card"><h2>Login required</h2><p class="muted">Log in to open a question and submit. Your score and certificate belong to your login.</p><p style="margin-top:12px"><a class="btn" href="#/auth/login">Login</a> <a class="btn ghost" href="#/auth/signup">Sign up</a></p></div>'; return; }
   const q=cfg.questions.find(x=>x.id===qid)||cfg.questions[0]; currentQ=q; verifyState=null; lastRunOutput=null;
+  const qi=cfg.questions.findIndex(x=>x.id===q.id); const prevQ=cfg.questions[qi-1]||null, nextQ=cfg.questions[qi+1]||null;
   const st=status(cfg);
   const rec=progFor(u.email,q.id);
   if(!rec.firstOpenedAt && st==="live"){ rec.firstOpenedAt=nowISO(); saveProgRec(u.email,q.id,rec); }
   if(st!=="live"){
-    $("#app").innerHTML='<div class="card"><h2>'+esc(q.title)+'</h2><p class="muted">The contest is '+(st==="upcoming"?"not live yet — it starts at "+esc(fmtDT(cfg.startAt)):"over — submissions are closed")+'.</p><p style="margin-top:12px"><a href="#/">← Back home</a></p></div>'+timerBox(cfg);
+    $("#app").innerHTML='<div class="card"><h2>'+esc(q.title)+'</h2><p class="muted">The contest is '+(st==="upcoming"?"not live yet — it starts at "+esc(fmtDT(cfg.startAt)):"over — submissions are closed")+'.</p><p style="margin-top:12px"><a href="#/problems">← Back to questions</a></p></div>'+timerBox(cfg);
     startTimer(cfg); return;
   }
   const drafts=loadJ(K_DRAFT,{});
   const lang=(drafts[q.id]&&drafts[q.id].lang)||"python";
   const code=(drafts[q.id]&&drafts[q.id].code!==undefined)?drafts[q.id].code:(q.starter[lang]||"");
   $("#app").innerHTML=
-  '<p style="margin-top:16px"><a href="#/">← All questions</a></p>'
+  '<p style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><a href="#/problems">← All questions</a><span>'+(prevQ?'<button class="btn ghost" id="prevBtn">← Previous</button>':'<button class="btn ghost" disabled>← Previous</button>')+' '+(nextQ?'<button class="btn ghost" id="nextBtn">Next →</button>':'<button class="btn ghost" disabled>Next →</button>')+'</span></p>'
   +timerBox(cfg)
   +'<div class="card"><h2>'+esc(q.title)+'</h2><p class="small">Problem '+(cfg.questions.findIndex(x=>x.id===q.id)+1)+' of '+cfg.questions.length+' &nbsp;·&nbsp; '+diffBadge(q.difficulty)+' &nbsp;·&nbsp; '+basePts(cfg,q.difficulty)+' points</p><p style=\"white-space:pre-wrap\">'+esc(q.statement)+'</p><h3>Sample input (from admin)</h3><pre>'+esc(q.sampleInput)+'</pre><h3>Expected output (from admin)</h3><pre>'+esc(q.sampleOutput)+'</pre><p class="small">Attempts so far on this question: <b>'+(rec.attempts||0)+'</b> &nbsp;·&nbsp; Wrong attempts: <b>'+(rec.wrong||0)+'</b>'+(rec.solvedAt?' &nbsp;·&nbsp; <span class="pass">✓ Solved</span>':"")+'</p></div>'
   +'<div class="card"><h2>Your code — runs on this site</h2><div class="row"><div><label>Language</label><select id="lang"><option value="python">Python</option><option value="c">C (gcc)</option></select></div><div><label>Logged in as</label><input value="'+esc(u.name+" · "+u.email+(u.regNo?" · Reg. "+u.regNo:""))+'" disabled></div></div>'
   +'<label style="margin-top:12px">Code — autosaves as you type</label><div class="editor"><div class="editor-gutter" id="codeGutter" aria-hidden="true">1</div><div class="editor-body"><pre class="editor-hl" id="codeHlPre" aria-hidden="true"><code id="codeHl"></code></pre><textarea id="code" spellcheck="false">'+esc(code)+'</textarea></div></div><p class="small" id="draftMsg">Draft autosaved in this browser.</p>'
   +'<h3>Run &amp; Verify — the site runs your code</h3><p class="muted">Click Run &amp; Verify and this site runs your code against the sample input above and compares the output with the expected output. Do not run the code on your own machine. A wrong output, compile error or runtime error counts as one wrong attempt (−10 points).</p><p><button class="btn" id="runBtn">▶ Run &amp; Verify</button> <span id="runMsg"></span></p><div id="runOut"></div>'
-  +'<p style="margin-top:16px"><button class="btn ghost" id="submitBtn">Submit code</button> <span class="small" id="submitMsg"></span></p></div>';
+  +'<p style="margin-top:16px"><button class="btn ghost" id="submitBtn">Submit code</button> <span class="small" id="submitMsg"></span></p><p style="margin-top:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>'+(prevQ?'<button class="btn ghost" id="prevBtnB">← Previous</button>':'<button class="btn ghost" disabled>← Previous</button>')+'</span><span>'+(nextQ?'<button class="btn ghost" id="nextBtnB">Next →</button>':'<button class="btn ghost" disabled>Next →</button>')+'</span></p></div>';
   startTimer(cfg,()=>autoSubmit());
   window.addEventListener("beforeunload", leaveGuard);
   const langSel=$("#lang"); langSel.value=lang;
@@ -531,6 +533,8 @@ function renderArena(qid){
     }
   };
   $("#submitBtn").onclick=()=>doSubmit(false);
+  if(prevQ){ const pb=$("#prevBtn"); if(pb) pb.onclick=()=>go("#/arena/"+prevQ.id); const pb2=$("#prevBtnB"); if(pb2) pb2.onclick=()=>go("#/arena/"+prevQ.id); }
+  if(nextQ){ const nb=$("#nextBtn"); if(nb) nb.onclick=()=>go("#/arena/"+nextQ.id); const nb2=$("#nextBtnB"); if(nb2) nb2.onclick=()=>go("#/arena/"+nextQ.id); }
 }
 function doSubmit(isAuto){
   const cfg=loadCfg(); const q=currentQ; if(!q) return;
@@ -558,6 +562,12 @@ function doSubmit(isAuto){
 function autoSubmit(){
   try{ const code=$("#code")?$("#code").value:""; if(code&&code.trim()&&currentQ){ verifyState=verifyState||"skipped"; doSubmit(true); alert("Time is up — your current code was auto-submitted."); } }catch(e){}
 }
+/* ---------- certificate button: one combined certificate (Certopus link if set) ---------- */
+function certBtnHtml(u,cfg){
+  if(!certVisible(cfg)) return "";
+  if(u.certUrl) return '<p style="margin-top:14px"><a class="btn" href="'+esc(u.certUrl)+'" target="_blank" rel="noopener">View Verified Certificate ↗</a></p><p class="small" style="margin-top:6px">Your publicly verifiable certificate on Certopus — anyone can check it with this link, no login needed. <a href="#/certificate">View the built-in certificate instead</a></p>';
+  return '<p style="margin-top:14px"><a class="btn" href="#/certificate">Get Certificate of Participation →</a></p>';
+}
 /* ---------- submitted: score breakdown + average time ---------- */
 function renderSubmitted(){
   const cfg=loadCfg(); const u=currentUser();
@@ -571,16 +581,16 @@ function renderSubmitted(){
   let html=timerBox(cfg)
   +'<div class="card"><h2>✓ Submitted</h2><p>Your code for <b>'+esc(last.questionTitle)+'</b> was submitted at '+esc(fmtDT(last.submittedAt))+'.</p><p class="muted">Verify: <b>'+esc(last.verify)+'</b> &nbsp;·&nbsp; Language: '+esc(last.language)+(last.auto?" &nbsp;·&nbsp; Auto-submitted at time-up":"")+'</p>'
   +(submitNote==="unverified"?'<p class="muted" style="margin-top:8px">Submitted, but not counted as solved — run &amp; verify this code first, then submit the same code.</p>':"")
-  +(certVisible(cfg)?'<p style="margin-top:14px"><a class="btn" href="#/certificate/'+last.id+'">Get Certificate of Participation →</a></p>':"")+'</div>';
+  +certBtnHtml(u,cfg)+'</div>';
   if(ended){
     html+='<div class="card"><h2>Your final score — '+fmtScore(sc.final)+' / 100</h2><p class="muted">Registration No: <b>'+esc(u.regNo||"—")+'</b> &nbsp;·&nbsp; Normalized to 100 &nbsp;·&nbsp; Total '+sc.total+' of '+sc.maxTotal+' possible points &nbsp;·&nbsp; Solved '+sc.solvedCount+'/'+cfg.questions.length+' &nbsp;·&nbsp; Average time to solve: <b>'+fmtDur(sc.avg)+'</b></p><table><tr><th>Question</th><th>Base</th><th>Wrong attempts</th><th>Time taken</th><th>Score</th></tr>'
     +sc.rows.map(r=>'<tr><td>'+esc(r.q.title)+(r.solved?' <span class="pass">✓</span>':"")+'</td><td>'+r.base+'</td><td>'+r.wrong+'</td><td>'+fmtDur(r.secs)+'</td><td><b>'+r.score+'</b></td></tr>').join("")+'</table><p class="small" style="margin-top:8px">Score per question = base − wrong-attempt penalty per wrong attempt − per-minute penalty per minute taken (minimum 0). Final score = (total earned ÷ total possible) × 100, so a perfect run is 100. Average time is the mean of the times for the questions you solved.</p></div>';
   } else if(certVisible(cfg)){
-    html+='<div class="card"><h2>Certificate is open</h2><p class="muted">The admin has opened certificates early — get yours from the button above or the table below. Your score will be revealed after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b>.</p></div>';
+    html+='<div class="card"><h2>Certificate is open</h2><p class="muted">The admin has opened certificates early — get yours from the button above. Your score will be revealed after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b>.</p></div>';
   } else {
     html+='<div class="card"><h2>Results after the contest ends</h2><p class="muted">Your score and Certificate of Participation will appear here after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b> — the timer above shows how long is left. Your submissions are safely stored in the database, and Admin can already see them.</p></div>';
   }
-  html+='<div class="card"><h2>All your submissions ('+subs.length+')</h2><table><tr><th>Question</th><th>Language</th><th>Verify</th><th>Time</th>'+(certVisible(cfg)?'<th></th>':"")+'</tr>'+subs.map(s=>'<tr><td>'+esc(s.questionTitle)+'</td><td>'+esc(s.language)+'</td><td>'+esc(s.verify)+'</td><td>'+esc(fmtDT(s.submittedAt))+'</td>'+(certVisible(cfg)?'<td><a href="#/certificate/'+s.id+'">Certificate</a></td>':"")+'</tr>').join("")+'</table><p style="margin-top:12px"><button class="btn ghost" id="dlSubs">Download my submissions (.json)</button></p></div>';
+  html+='<div class="card"><h2>All your submissions ('+subs.length+')</h2><table><tr><th>Question</th><th>Language</th><th>Verify</th><th>Time</th></tr>'+subs.map(s=>'<tr><td>'+esc(s.questionTitle)+'</td><td>'+esc(s.language)+'</td><td>'+esc(s.verify)+'</td><td>'+esc(fmtDT(s.submittedAt))+'</td></tr>').join("")+'</table><p style="margin-top:12px"><button class="btn ghost" id="dlSubs">Download my submissions (.json)</button></p></div>';
   $("#app").innerHTML=html;
   startTimer(cfg);
   $("#dlSubs").onclick=()=>download("firstbyte-submissions.json",JSON.stringify(subs,null,2),"application/json");
@@ -590,19 +600,64 @@ function download(name,text,type){ const a=document.createElement("a"); a.href=U
 <script>
 "use strict";
 /* ---------- certificate: FirstByte design, name + date overlaid ---------- */
-function renderCertificate(subId){
+function renderCertificate(){
   const u=currentUser();
   if(!u){ $("#app").innerHTML='<div class="card"><h2>Login required</h2><p class="muted">Log in with the email and password you signed up with to get your certificate.</p><p style="margin-top:12px"><a class="btn" href="#/auth/login">Login</a></p></div>'; return; }
   const cfg=loadCfg();
   if(!certVisible(cfg)){ $("#app").innerHTML='<div class="card"><h2>Certificate not open yet</h2><p class="muted">Your Certificate of Participation will be ready here after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b> — or as soon as the admin opens certificates.</p><p style="margin-top:12px"><a href="#/submitted">← My submissions</a></p></div>'+timerBox(cfg); startTimer(cfg); return; }
   const subs=loadJ(K_SUB,[]).filter(s=>s.email===u.email);
-  const s=subs.find(x=>x.id===subId)||subs[subs.length-1];
+  const s=subs[0];
   if(!s){ $("#app").innerHTML='<div class="card"><h2>No submission found</h2><p class="muted">Submit at least one solution to get a Certificate of Participation.</p><p><a href="#/">← Back home</a></p></div>'; return; }
-  $("#app").innerHTML='<div class="noprint card"><h2>Certificate of Participation</h2><p class="muted">Issued for participating in '+esc(s.contestTitle||"FirstByte")+'. This is the official FirstByte design — your name and date are filled in on it. Participation only, no rank or score.</p><p class="muted">Registration No: <b>'+esc(u.regNo||"—")+'</b></p><p style="margin-top:12px"><button class="btn" onclick="window.print()">Download / Print as PDF</button> <a class="btn ghost" href="#/submitted">← My result</a></p></div>'
+  $("#app").innerHTML='<div class="noprint card"><h2>Certificate of Participation</h2><p class="muted">Issued for participating in '+esc(s.contestTitle||"FirstByte")+' — one combined certificate for the whole contest. This is the official FirstByte design — your name and date are filled in on it. Participation only, no rank or score.</p><p class="muted">Registration No: <b>'+esc(u.regNo||"—")+'</b></p><p style="margin-top:12px"><button class="btn" onclick="window.print()">Download / Print as PDF</button> <a class="btn ghost" href="#/submitted">← My result</a></p></div>'
   +'<div class="cert-wrap"><img src="'+esc(cfg.certImage||"certificate.jpg")+'" alt="FirstByte Certificate of Participation"><div class="cert-name">'+esc(s.name)+'</div><div class="cert-date">'+esc(fmtDateLong(s.submittedAt))+'</div><div class="cert-id">Certificate ID: '+esc(s.certId)+(u.regNo?' · Reg. No: '+esc(u.regNo):"")+'</div></div>';
 }
 /* ---------- admin ---------- */
 // Admin PIN is checked server-side (api/admin.js) against the ADMIN_PIN env var - see .env.example. It is deliberately NOT in this file.
+/* ---------- Certopus CSV import: match verification links by email ---------- */
+function parseCsv(text){
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  const rows=[]; let row=[], cur="", q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else q=false; }
+      else cur+=ch;
+    } else if(ch==='"'){ q=true; }
+    else if(ch===','){ row.push(cur); cur=""; }
+    else if(ch==='\n'||ch==='\r'){ if(ch==='\r'&&text[i+1]==='\n') i++; row.push(cur); cur=""; if(row.length>1||row[0]!=="") rows.push(row); row=[]; }
+    else cur+=ch;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function importCertopusCsv(text){
+  const rows=parseCsv(text||"");
+  if(!rows.length) return {matched:0,msg:"That file looks empty."};
+  const head=rows[0].map(h=>String(h||"").trim().toLowerCase());
+  const ei=head.findIndex(h=>h.indexOf("email")>=0);
+  let ui=head.findIndex(h=>h.indexOf("verif")>=0);
+  if(ui<0) ui=head.findIndex(h=>(h.indexOf("certificate")>=0||h.indexOf("credential")>=0)&&(h.indexOf("url")>=0||h.indexOf("link")>=0));
+  if(ui<0) ui=head.findIndex(h=>h==="url"||h==="link"||h.indexOf("url")>=0);
+  if(ei<0||ui<0) return {matched:0,msg:"Could not find the columns. Headers seen: "+rows[0].join(" | ")+". Need one header with 'email' and one with the verification link (e.g. 'verification link')."};
+  const users=loadJ(K_USERS,[]);
+  let matched=0; const unknown=[]; let bad=0;
+  rows.slice(1).forEach(r=>{
+    const em=String(r[ei]||"").trim().toLowerCase();
+    const url=String(r[ui]||"").trim();
+    if(!em&&!url) return;
+    if(!em||!url||!/^https?:\/\//i.test(url)){ bad++; return; }
+    const us=users.find(x=>x.email===em);
+    if(!us){ unknown.push(em); return; }
+    us.certUrl=url; matched++;
+  });
+  saveJ(K_USERS,users);
+  const noLink=users.filter(x=>!x.certUrl).length;
+  let msg="Saved "+matched+" verified link"+(matched===1?"":"s")+".";
+  if(unknown.length) msg+=" "+unknown.length+" email"+(unknown.length===1?"":"s")+" not in participants: "+unknown.slice(0,5).join(", ")+(unknown.length>5?"…":"");
+  if(bad) msg+=" "+bad+" row"+(bad===1?"":"s")+" skipped (missing email or link).";
+  msg+=" "+noLink+" participant"+(noLink===1?"":"s")+" still without a link.";
+  return {matched:matched,msg:msg};
+}
 function renderAdmin(){
   const unlocked=sessionStorage.getItem("dn2_admin")==="1";
   if(!unlocked){
@@ -615,11 +670,14 @@ function renderAdmin(){
   const regByEmail={}; users.forEach(us=>{ regByEmail[us.email]=us.regNo||""; });
   const byEmail={};
   users.forEach(us=>{ const sc=scoreFor(cfg,us.email); byEmail[us.email]={user:us,score:sc,subs:subs.filter(s=>s.email===us.email)}; });
+  const withLink=users.filter(us=>us.certUrl);
+  const certopusListHtml=withLink.length?'<table><tr><th>Name</th><th>Email</th><th>Verified link</th><th></th></tr>'+withLink.map(us=>'<tr><td>'+esc(us.name)+'</td><td>'+esc(us.email)+'</td><td><a href="'+esc(us.certUrl)+'" target="_blank" rel="noopener">Open ↗</a></td><td><button class="btn ghost" data-certdel="'+esc(us.email)+'">Remove</button></td></tr>').join("")+'</table>':'<p class="small">No verified certificate links yet — import a Certopus CSV to add them.</p>';
   $("#app").innerHTML='<div class="card"><h2>Admin panel</h2><p class="muted">'+(CLOUD?"Accounts, submissions and scores are shared through the Supabase database — this panel shows everyone, from any device. Data refreshes automatically every few seconds.":"Accounts, submissions and scores live in this browser only (no shared database configured). Ask participants to send their submission .json if they used another device (Import below), or connect Supabase for central data. See README.md.")+'</p><p class="small">Contest: <b>'+status(cfg)+'</b> · ends '+esc(fmtDT(cfg.endAt))+(CLOUD?' · live from the shared database':' · data on this device only')+'</p><p style="margin-top:10px"><button class="btn" id="refreshAdmin">Refresh</button> <button class="btn ghost" id="logoutAdmin">Log out</button></p></div>'
   +'<div class="card"><h2>Contest</h2><div class="row"><div><label>Title</label><input id="cTitle" value="'+esc(cfg.title)+'"></div><div><label>Duration (minutes)</label><input id="cDur" type="number" value="'+cfg.durationMin+'"></div></div><div class="row"><div><label>Start (local date-time)</label><input id="cStart" type="datetime-local" value="'+esc(toLocalInput(cfg.startAt))+'"></div><div><label>End (local date-time)</label><input id="cEnd" type="datetime-local" value="'+esc(toLocalInput(cfg.endAt))+'"></div></div><div class="row"><div><label>Base points — Easy</label><input id="cBaseE" type="number" value="'+(cfg.base?cfg.base.Easy:100)+'"></div><div><label>Base points — Medium</label><input id="cBaseM" type="number" value="'+(cfg.base?cfg.base.Medium:150)+'"></div><div><label>Base points — Hard</label><input id="cBaseH" type="number" value="'+(cfg.base?cfg.base.Hard:200)+'"></div></div><div class="row"><div><label>Penalty per wrong attempt</label><input id="cWP" type="number" value="'+(cfg.wrongPenalty!=null?cfg.wrongPenalty:10)+'"></div><div><label>Penalty per minute taken</label><input id="cMP" type="number" value="'+(cfg.minutePenalty!=null?cfg.minutePenalty:1)+'"></div></div><label>Description</label><textarea id="cDesc" style="min-height:70px">'+esc(cfg.description)+'</textarea><p style="margin-top:12px"><button class="btn" id="saveCfg">Save contest</button> <button class="btn ghost" id="expCfg">Export config (.json)</button> <span class="small" id="cfgMsg"></span></p><p class="small">Quick set: <button class="btn ghost" id="startNow">Start now, 60 min</button></p></div>'
   +'<div class="card"><h2>Certificate</h2><p class="muted">Show the Certificate of Participation whenever you want — even before the contest ends. You can also replace the certificate design with the one the team decides.</p><label><input type="checkbox" id="certOpen" style="width:auto"'+(cfg.certOpen?" checked":"")+' > Show certificate to participants now</label><p class="small">When off, the certificate appears automatically after the contest ends. When on, participants can get it right away — scores stay hidden until the end.</p><label>Change certificate design (image)</label><input type="file" id="certFile" accept="image/*"><p class="small" id="certImgMsg">Current design: '+(cfg.certImage?"Custom design (saved in the shared database).":"Built-in FirstByte design.")+' The name and date are overlaid at fixed positions tuned for the current design — if the new design puts the name elsewhere, the positions need adjusting. Keep the image under 500 KB if you can; the whole site re-downloads it every few seconds.</p><p style="margin-top:12px"><button class="btn" id="saveCert">Save certificate settings</button> <button class="btn ghost" id="resetCertImg">Reset to the built-in design</button> <span class="small" id="certMsg"></span></p></div>'
+  +'<div class="card"><h2>Certopus certificates (verified)</h2><p class="muted">After you bulk-issue certificates in Certopus, upload the Certopus export CSV here. The site matches each verification link to a participant by email, and each participant then gets a "View Verified Certificate" button that opens their own public Certopus page. Participants without a link still get the built-in certificate.</p><p class="small">The CSV needs an email column and a verification-link column. The importer looks for a header containing "email", and a header containing "verif" (or "certificate"/"credential" with "url"/"link").</p><label>Certopus export (.csv)</label><input type="file" id="certopusFile" accept=".csv,text/csv"><p style="margin-top:12px"><button class="btn" id="importCertopus">Import links from CSV</button> <button class="btn ghost" id="clearCertopus">Clear all links</button> <span class="small" id="certopusMsg"></span></p>'+certopusListHtml+'</div>'
   +'<div class="card"><h2>Questions ('+cfg.questions.length+')</h2>'+cfg.questions.map((q,i)=>'<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px"><div class="row"><div><label>Title</label><input data-f="title" data-i="'+i+'" value="'+esc(q.title)+'"></div><div><label>Difficulty</label><input data-f="difficulty" data-i="'+i+'" value="'+esc(q.difficulty)+'"></div></div><label>Statement</label><textarea data-f="statement" data-i="'+i+'" style="min-height:70px">'+esc(q.statement)+'</textarea><div class="row"><div><label>Sample input (admin-provided)</label><textarea data-f="sampleInput" data-i="'+i+'" style="min-height:70px">'+esc(q.sampleInput)+'</textarea></div><div><label>Expected output (admin-provided)</label><textarea data-f="sampleOutput" data-i="'+i+'" style="min-height:70px">'+esc(q.sampleOutput)+'</textarea></div></div><div class="row"><div><label>Starter code — Python</label><textarea data-starter="python" data-i="'+i+'" style="min-height:90px">'+esc(q.starter&&q.starter.python||"")+'</textarea></div><div><label>Starter code — C</label><textarea data-starter="c" data-i="'+i+'" style="min-height:90px">'+esc(q.starter&&q.starter.c||"")+'</textarea></div></div><p style="margin-top:8px"><button class="btn danger ghost" data-del="'+i+'">Delete this question</button></p></div>').join("")+'<p style="margin-top:12px"><button class="btn" id="saveQ">Save questions</button> <button class="btn ghost" id="addQ">+ Add question</button> <button class=\"btn ghost\" id=\"resetQ\">Reset to built-in set</button> <span class="small" id="qMsg"></span></p></div>'
-  +'<div class="card"><h2>Participants &amp; scores ('+users.length+')</h2>'+(users.length?'<table><tr><th>Name</th><th>Email</th><th>Reg. no</th><th>Final score (/100)</th><th>Solved</th><th>Attempts</th><th>Wrong</th><th>Avg solve time</th><th>Submissions</th></tr>'+users.map(us=>{ const b=byEmail[us.email]; const att=b.score.rows.reduce((a,r)=>a+r.attempts,0), wr=b.score.rows.reduce((a,r)=>a+r.wrong,0); return '<tr><td>'+esc(us.name)+'</td><td>'+esc(us.email)+'</td><td>'+esc(us.regNo||"—")+'</td><td><b>'+fmtScore(b.score.final)+'</b><br><span class="small">total '+b.score.total+'</span></td><td>'+b.score.solvedCount+'/'+cfg.questions.length+'</td><td>'+att+'</td><td>'+wr+'</td><td>'+fmtDur(b.score.avg)+'</td><td>'+b.subs.length+'</td></tr>'; }).join("")+'</table>':'<p class="muted">No accounts on this device yet.</p>')+'</div>'
+  +'<div class="card"><h2>Participants &amp; scores ('+users.length+')</h2>'+(users.length?'<table><tr><th>Name</th><th>Email</th><th>Reg. no</th><th>Final score (/100)</th><th>Solved</th><th>Attempts</th><th>Wrong</th><th>Avg solve time</th><th>Submissions</th><th>Certopus</th></tr>'+users.map(us=>{ const b=byEmail[us.email]; const att=b.score.rows.reduce((a,r)=>a+r.attempts,0), wr=b.score.rows.reduce((a,r)=>a+r.wrong,0); return '<tr><td>'+esc(us.name)+'</td><td>'+esc(us.email)+'</td><td>'+esc(us.regNo||"—")+'</td><td><b>'+fmtScore(b.score.final)+'</b><br><span class="small">total '+b.score.total+'</span></td><td>'+b.score.solvedCount+'/'+cfg.questions.length+'</td><td>'+att+'</td><td>'+wr+'</td><td>'+fmtDur(b.score.avg)+'</td><td>'+b.subs.length+'</td><td>'+(us.certUrl?'<a href="'+esc(us.certUrl)+'" target="_blank" rel="noopener">✓ Link</a>':"—")+'</td></tr>'; }).join("")+'</table>':'<p class="muted">No accounts on this device yet.</p>')+'</div>'
   +'<div class="card"><h2>Submissions on this device ('+subs.length+')</h2>'+(subs.length?'<table><tr><th>Name</th><th>Question</th><th>Lang</th><th>Verify</th><th>Time</th><th>Code</th></tr>'+subs.map((s,i)=>'<tr><td>'+esc(s.name)+'<br><span class="small">'+esc(s.email||"")+(regByEmail[s.email]?' · Reg. '+esc(regByEmail[s.email]):"")+'</span></td><td>'+esc(s.questionTitle)+'</td><td>'+esc(s.language)+'</td><td>'+esc(s.verify)+'</td><td>'+esc(fmtDT(s.submittedAt))+'</td><td><button class="btn ghost" data-view="'+i+'">View</button></td></tr>').join("")+'</table><pre id="viewCode" style="display:none;margin-top:12px"></pre>':'<p class="muted">No submissions on this device yet.</p>')
   +'<p style="margin-top:12px"><button class="btn ghost" id="dlAll">Download all (.json)</button> <button class="btn ghost" id="dlCsv">Download all (.csv)</button> <label style="display:inline-block;margin-left:8px">Import submission .json <input type="file" id="impFile" accept=".json"></label> <button class="btn danger" id="clearSubs">Clear submissions</button></p></div>';
   $("#refreshAdmin").onclick=()=>refreshAdmin();
@@ -630,6 +688,9 @@ function renderAdmin(){
   $("#saveCert").onclick=()=>{ const c=loadCfg(); c.certOpen=$("#certOpen").checked; saveCfg(c); $("#certMsg").textContent="Saved ✓"; };
   $("#certFile").onchange=e=>{ const f=e.target.files[0]; if(!f) return; if(!f.type||f.type.indexOf("image/")!==0){ alert("Please choose an image file."); return; } if(f.size>2*1024*1024){ alert("That image is too big (max 2 MB). Please use a smaller file."); return; } const r=new FileReader(); r.onload=()=>{ const c=loadCfg(); const co=$("#certOpen"); if(co) c.certOpen=co.checked; c.certImage=r.result; saveCfg(c); $("#certImgMsg").textContent="Custom design saved ✓ ("+f.name+", "+Math.round(f.size/1024)+" KB) — it will reach every participant through the shared database."; }; r.readAsDataURL(f); };
   $("#resetCertImg").onclick=()=>{ if(confirm("Go back to the built-in certificate design?")){ const c=loadCfg(); const co=$("#certOpen"); if(co) c.certOpen=co.checked; c.certImage=null; saveCfg(c); renderAdmin(); } };
+  $("#importCertopus").onclick=()=>{ const f=$("#certopusFile").files[0]; if(!f){ $("#certopusMsg").textContent="Choose a .csv file first."; return; } const r=new FileReader(); r.onload=()=>{ const res=importCertopusCsv(r.result); renderAdmin(); const m=$("#certopusMsg"); if(m) m.textContent=res.msg; }; r.readAsText(f); };
+  $("#clearCertopus").onclick=()=>{ if(!confirm("Remove ALL Certopus verification links? Participants will go back to the built-in certificate.")) return; const us=loadJ(K_USERS,[]); us.forEach(x=>{ x.certUrl=""; }); saveJ(K_USERS,us); renderAdmin(); };
+  document.querySelectorAll("[data-certdel]").forEach(b=>b.onclick=()=>{ const em=b.dataset.certdel; const us=loadJ(K_USERS,[]); const t=us.find(x=>x.email===em); if(t){ t.certUrl=""; saveJ(K_USERS,us); renderAdmin(); } });
   const applyQEdits=c=>{ document.querySelectorAll("[data-f]").forEach(el=>{ c.questions[parseInt(el.dataset.i)][el.dataset.f]=el.value; }); document.querySelectorAll("[data-starter]").forEach(el=>{ const qq=c.questions[parseInt(el.dataset.i)]; qq.starter=qq.starter||{python:"",c:""}; qq.starter[el.dataset.starter]=el.value; }); };
   $("#saveQ").onclick=()=>{ const c=loadCfg(); applyQEdits(c); saveCfg(c); $("#qMsg").textContent="Saved ✓"; };
   $("#resetQ").onclick=()=>{ if(confirm("Replace ALL questions with the built-in set (the 5 questions from the contest PDF)? Any edits you made to the current questions will be lost.")){ const c=loadCfg(); c.questions=seedConfig().questions; saveCfg(c); renderAdmin(); } };
