@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+<title>FirstByte — Coding Contest</title>
+<style>
+:root{--bg:#070b14;--card:#0e1626;--card2:#0a1220;--line:#1e2c4a;--green:#00ff88;--green-dim:#00c96b;--text:#e8eef7;--muted:#93a1b8;--red:#ff5c5c;--amber:#ffb020}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+a{color:var(--green);text-decoration:none}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px 60px}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line);max-width:1060px;margin:0 auto}
+.logo{font-weight:800;font-size:20px}.logo span{color:var(--green)}
+nav a{margin-left:18px;color:var(--muted);font-size:14px}nav a:hover{color:var(--text)}
+.hero{padding:44px 0 10px}.hero h1{font-size:38px;line-height:1.15}.hero h1 span{color:var(--green)}
+.hero p{color:var(--muted);margin-top:10px;max-width:640px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:18px}
+.card h2{font-size:18px;margin-bottom:8px}.card h3{font-size:15px;margin:14px 0 6px}
+.muted{color:var(--muted);font-size:14px}.small{font-size:13px;color:var(--muted)}
+.btn{display:inline-block;background:var(--green);color:#04120a;border:0;border-radius:10px;padding:11px 20px;font-weight:700;font-size:15px;cursor:pointer}
+.btn:hover{background:var(--green-dim)}.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+input,select,textarea{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px 12px;font-size:15px}
+textarea{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6;min-height:280px;resize:vertical;tab-size:2}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:180px}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.badge.live{background:#06351f;color:var(--green)}.badge.soon{background:#2a2305;color:var(--amber)}.badge.over{background:#2a1214;color:var(--red)}
+.timer{font-family:"JetBrains Mono",monospace;font-size:34px;font-weight:700;letter-spacing:1px}
+.timer.warn{color:var(--amber)}.timer.crit{color:var(--red)}
+/* Contest look: kicker, stats row, difficulty badges, timer bar, paste toast */
+.kicker{font-size:12px;letter-spacing:2.5px;text-transform:uppercase;color:var(--green);font-weight:700}
+.contest-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.contest-stats span{border:1px solid var(--line);border-radius:10px;padding:8px 14px;font-size:13px;color:var(--muted)}
+.contest-stats b{color:var(--text);font-size:15px}
+.diff{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:700}
+.diff-easy{background:#06351f;color:var(--green)}.diff-medium{background:#2a2305;color:var(--amber)}.diff-hard{background:#2a1214;color:var(--red)}
+.timerbar{border-left:4px solid var(--green)}
+.logo .logo-tag{color:var(--muted);font-size:11px;letter-spacing:2px;border:1px solid var(--line);border-radius:99px;padding:3px 9px;vertical-align:middle}
+.paste-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:#1a2438;border:1px solid var(--line);color:var(--text);padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:99}
+.paste-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+pre{background:#05080f;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:13px;white-space:pre-wrap;word-break:break-word}
+.pass{color:var(--green);font-weight:700}.fail{color:var(--red);font-weight:700}
+.qitem{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line)}
+.qitem:last-child{border-bottom:0}
+/* Code editor: line numbers + syntax highlighting over a plain textarea */
+.editor{display:flex;border:1px solid var(--line);border-radius:10px;background:var(--card2);overflow:hidden}
+.editor-gutter{flex:0 0 auto;width:44px;padding:11px 8px 11px 0;text-align:right;color:var(--muted);font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6;white-space:pre;overflow:hidden;user-select:none;background:rgba(255,255,255,.02)}
+.editor-body{position:relative;flex:1;min-width:0;height:340px}
+.editor-hl,.editor-body textarea{margin:0;padding:11px 12px;font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;line-height:1.6;tab-size:2;white-space:pre;overflow:auto}
+.editor-hl{position:absolute;inset:0;pointer-events:none;color:var(--text)}
+.editor-body textarea{position:absolute;inset:0;width:100%;height:100%;background:transparent;border:0;color:transparent;caret-color:var(--text);resize:none;outline:none}
+.tk-kw{color:#7dd3fc}.tk-str{color:#86efac}.tk-com{color:#64748b;font-style:italic}.tk-num{color:#fbbf24}
+/* Certificate: FirstByte design image + overlaid name/date */
+.cert-wrap{position:relative;max-width:900px;margin:18px auto}
+.cert-wrap img{width:100%;display:block;border-radius:4px}
+.cert-name{position:absolute;left:20%;right:20%;top:39.5%;height:10.5%;background:#fff;display:flex;align-items:center;justify-content:center;font-family:"Great Vibes",cursive;font-size:clamp(28px,4.8vw,54px);color:#0a2540;line-height:1;overflow:hidden;white-space:nowrap}
+.cert-date{position:absolute;left:8.5%;top:78.8%;width:14.5%;height:5%;background:#fff;display:flex;align-items:center;font-size:13px;font-weight:700;color:#0a2540;white-space:nowrap;overflow:hidden}
+.cert-id{position:absolute;left:50%;transform:translateX(-50%);bottom:2.5%;width:max-content;background:#fff;padding:2px 10px;border-radius:99px;font-size:11px;color:#5a6b80}
+@media print{body{background:#fff}header,nav,.noprint,.wrap>.card,footer{display:none!important}.cert-wrap{max-width:none;margin:0}.cert-wrap img{border-radius:0}}
+footer{color:var(--muted);font-size:13px;text-align:center;padding:30px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">FirstByte <span class="logo-tag">CODING CONTEST</span></div>
+  <nav><a href="#/">Home</a><a href="#/submitted">My result</a><a href="#/admin">Admin</a><span id="navAuth" style="margin-left:18px"></span></nav>
+  <span id="dbStatus" class="small"></span>
+</header>
+<div class="wrap" id="app"></div>
+<footer>FirstByte Coding Contest &middot; Organised by DevNest — Coding Club, NIELIT Ropar &middot; Timer + submit + site-run verify.</footer>
+<script>
+"use strict";
+/* ---------- storage keys ---------- */
+const K_CFG="dn2_config_v1", K_USERS="dn2_users_v1", K_SESS="dn2_session_v1", K_DRAFT="dn2_drafts_v1", K_SUB="dn2_submissions_v1", K_PROG="dn2_progress_v1";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const uid=()=> "DN-2026-"+Math.random().toString(36).slice(2,8).toUpperCase();
+const norm=s=>String(s==null?"":s).replace(/\r\n/g,"\n").split("\n").map(l=>l.trimEnd()).join("\n").trim();
+const nowISO=()=>new Date().toISOString();
+const BASE={Easy:100,Medium:150,Hard:200};
+function loadJ(k,fb){ try{ const v=JSON.parse(localStorage.getItem(k)); return v==null?fb:v; }catch(e){ return fb; } }
+function saveJ(k,v){ localStorage.setItem(k,JSON.stringify(v)); if(SYNC_KEYS.indexOf(k)>=0) cloudPush(k); }
+function saveJLocal(k,v){ localStorage.setItem(k,JSON.stringify(v)); }
+function isSeededCfg(){ return localStorage.getItem("dn2_cfg_seed_v1")==="1"; }
+
+/* ---------- shared database (Supabase) — optional ---------- */
+// Fill these two in to share accounts, submissions, scores and config across
+// ALL devices. Until then the site works locally in this browser only (v2).
+const SUPABASE_URL = "https://qcrgodjrxytzqohvqqex.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_GlB1dj5rfhX_0UVSFf4qTw_PahHNNmo";
+const CLOUD = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+const SYNC_KEYS = [K_USERS, K_SUB, K_PROG, K_CFG];
+let cloudStatus = CLOUD ? "connecting" : "local";
+function cloudHeaders(){ return {"apikey": SUPABASE_ANON_KEY, "Authorization": "Bearer "+SUPABASE_ANON_KEY, "Content-Type": "application/json"}; }
+async function cloudGet(table){
+  const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+"?select=*", {headers: cloudHeaders()});
+  if(!r.ok) throw new Error("GET "+table+" HTTP "+r.status);
+  return r.json();
+}
+async function cloudUpsert(table, rows, onConflict){
+  if(!rows.length) return;
+  const q = onConflict ? "?on_conflict="+encodeURIComponent(onConflict) : "";
+  const r = await fetch(SUPABASE_URL+"/rest/v1/"+table+q, {method:"POST", headers:Object.assign(cloudHeaders(), {"Prefer":"resolution=merge-duplicates,return=minimal"}), body:JSON.stringify(rows)});
+  if(!r.ok) throw new Error("POST "+table+" HTTP "+r.status);
+}
+async function cloudInsert(table, rows){
+  if(!rows.length) return;
+  const r = await fetch(SUPABASE_URL+"/rest/v1/"+table, {method:"POST", headers:Object.assign(cloudHeaders(), {"Prefer":"return=minimal"}), body:JSON.stringify(rows)});
+  if(!r.ok) throw new Error("POST "+table+" HTTP "+r.status);
+}
+function userToRow(u){ return {name:u.name, email:u.email, reg_no:u.regNo||null, pass_hash:u.passHash}; }
+function userFromRow(r){ return {name:r.name, email:r.email, regNo:r.reg_no||"", passHash:r.pass_hash, createdAt:r.created_at}; }
+function subToRow(s){ return {id:s.id, cert_id:s.certId, name:s.name, email:s.email, question_id:s.questionId, question_title:s.questionTitle, language:s.language, code:s.code, verify:s.verify, auto:!!s.auto, submitted_at:s.submittedAt, contest_title:s.contestTitle||"FirstByte"}; }
+function subFromRow(r){ return {id:r.id, certId:r.cert_id, name:r.name, email:r.email, questionId:r.question_id, questionTitle:r.question_title, language:r.language, code:r.code, verify:r.verify, auto:r.auto, submittedAt:r.submitted_at, contestTitle:r.contest_title}; }
+function progToRows(p){ const rows=[]; for(const email in p) for(const qid in p[email]){ const r=p[email][qid]; rows.push({email:email, question_id:qid, first_opened_at:r.firstOpenedAt, attempts:r.attempts||0, wrong:r.wrong||0, solved_at:r.solvedAt, solve_seconds:r.solveSeconds}); } return rows; }
+function progFromRows(rows){ const p={}; rows.forEach(r=>{ p[r.email]=p[r.email]||{}; p[r.email][r.question_id]={firstOpenedAt:r.first_opened_at, attempts:r.attempts||0, wrong:r.wrong||0, solvedAt:r.solved_at, solveSeconds:r.solve_seconds}; }); return p; }
+function cfgToRow(c){ return {id:1, title:c.title, description:c.description, rules:c.rules, duration_min:c.durationMin, base:c.base||{Easy:100,Medium:150,Hard:200}, wrong_penalty:c.wrongPenalty!=null?c.wrongPenalty:10, minute_penalty:c.minutePenalty!=null?c.minutePenalty:1, cleared_at:c.clearedAt||null, cert_open:c.certOpen===true, cert_image:c.certImage||null, start_at:c.startAt, end_at:c.endAt, questions:c.questions}; }
+function cfgFromRow(r){ return {title:r.title, description:r.description, rules:r.rules||[], durationMin:r.duration_min, base:r.base||{Easy:100,Medium:150,Hard:200}, wrongPenalty:r.wrong_penalty!=null?r.wrong_penalty:10, minutePenalty:r.minute_penalty!=null?r.minute_penalty:1, clearedAt:r.cleared_at||null, certOpen:r.cert_open===true, certImage:r.cert_image||null, startAt:r.start_at, endAt:r.end_at, questions:r.questions||[]}; }
+async function cloudDeleteAll(table){
+  // A DELETE with no filter is rejected by Supabase ("DELETE requires a
+  // WHERE clause"), so always send a filter that matches every row.
+  const f = table==="firstbyte_submissions" ? "?id=not.is.null" : table==="firstbyte_progress" ? "?email=not.is.null" : "";
+  const r=await fetch(SUPABASE_URL+"/rest/v1/"+table+f, {method:"DELETE", headers:cloudHeaders()});
+  if(!r.ok) throw new Error("DELETE "+table+" HTTP "+r.status);
+}
+const pushedSubs = new Set(JSON.parse(localStorage.getItem("dn2_pushed_v1")||"[]"));
+const pushChains={};
+function cloudPush(key){
+  if(!CLOUD) return;
+  // One queue per key: a shared timer used to cancel a pending account
+  // upload when progress was saved a moment later, so the account never
+  // reached the database. Sequential per key also stops two concurrent
+  // pushes from inserting the same submission twice.
+  pushChains[key]=(pushChains[key]||Promise.resolve()).then(()=>cloudPushNow(key)).catch(()=>{ cloudStatus="error"; setDbStatus(); });
+}
+async function cloudPushNow(key){
+  if(key===K_USERS){ const rows=loadJ(K_USERS,[]).map(userToRow); try{ await cloudUpsert("firstbyte_users", rows, "email"); }catch(e){ await cloudUpsert("firstbyte_users", rows.map(r=>{ const o=Object.assign({},r); delete o.reg_no; return o; }), "email"); } }
+  if(key===K_CFG){ const row=cfgToRow(loadCfg()); try{ await cloudUpsert("firstbyte_config", [row], "id"); }catch(e){ const o=Object.assign({},row); delete o.base; delete o.wrong_penalty; delete o.minute_penalty; delete o.cleared_at; delete o.cert_open; delete o.cert_image; await cloudUpsert("firstbyte_config", [o], "id"); } }
+  if(key===K_PROG) await cloudUpsert("firstbyte_progress", progToRows(loadJ(K_PROG,{})), "email,question_id");
+  if(key===K_SUB){
+    const all=loadJ(K_SUB,[]); const fresh=all.filter(s=>!pushedSubs.has(s.id));
+    if(fresh.length){ await cloudInsert("firstbyte_submissions", fresh.map(subToRow)); fresh.forEach(s=>pushedSubs.add(s.id)); localStorage.setItem("dn2_pushed_v1", JSON.stringify(Array.from(pushedSubs))); }
+  }
+  cloudStatus="shared"; setDbStatus();
+}
+let lastPullSig="";
+async function cloudPull(){
+  if(!CLOUD) return false;
+  try{
+    const results = await Promise.all([cloudGet("firstbyte_users"), cloudGet("firstbyte_submissions"), cloudGet("firstbyte_progress"), cloudGet("firstbyte_config")]);
+    const users=results[0]; let subs=results[1], prog=results[2]; const cfgs=results[3];
+    // Admin clear marker: if the shared config says the contest was cleared
+    // after this browser last saw it, drop local submissions/scores (they
+    // predate the clear) and sweep the cloud, so a stale browser can't push
+    // them back on its next save. Seen is recorded only after a successful
+    // sweep, so a failed sweep is retried on the next pull.
+    const cloudClearedAt=(cfgs[0]&&cfgs[0].cleared_at)||null;
+    const seenClear=localStorage.getItem("dn2_seen_clear_v1");
+    if(cloudClearedAt && (!seenClear || cloudClearedAt>seenClear)){
+      localStorage.setItem(K_SUB,"[]"); localStorage.setItem(K_PROG,"{}");
+      pushedSubs.clear(); localStorage.setItem("dn2_pushed_v1","[]");
+      subs=[]; prog=[];
+      try{ await cloudDeleteAll("firstbyte_submissions"); await cloudDeleteAll("firstbyte_progress"); localStorage.setItem("dn2_seen_clear_v1", cloudClearedAt); }catch(e){}
+    }
+    // Merge, don't overwrite: a row created locally a moment ago may not
+    // have been pushed yet when this pull runs. Cloud wins on conflicts.
+    const next = {};
+    const localUsers={}; loadJ(K_USERS,[]).forEach(u=>{ localUsers[u.email]=u; });
+    users.map(userFromRow).forEach(u=>{ localUsers[u.email]=u; });
+    next[K_USERS]=Object.values(localUsers);
+    const localSubs={}; loadJ(K_SUB,[]).forEach(s=>{ localSubs[s.id]=s; });
+    subs.map(subFromRow).forEach(s=>{ localSubs[s.id]=s; });
+    next[K_SUB]=Object.values(localSubs);
+    const mergedProg=loadJ(K_PROG,{});
+    const cloudProg=progFromRows(prog);
+    // Progress rows carry local-only fields (lastVerifiedCode, verifiedAt)
+    // that the cloud columns don't include — merge per field so a pull
+    // never wipes them. Cloud wins on the synced fields.
+    for(const em in cloudProg){ mergedProg[em]=mergedProg[em]||{}; for(const qid in cloudProg[em]) mergedProg[em][qid]=Object.assign({}, mergedProg[em][qid], cloudProg[em][qid]); }
+    next[K_PROG]=mergedProg;
+    const hasCfg = cfgs && cfgs.length>0;
+    if(hasCfg){ next[K_CFG]=cfgFromRow(cfgs[0]); localStorage.removeItem("dn2_cfg_seed_v1"); }
+    const sig = JSON.stringify(next)+"|"+(hasCfg?"cfg":"nocfg");
+    if(sig===lastPullSig) return false;
+    lastPullSig=sig;
+    for(const k in next) localStorage.setItem(k, JSON.stringify(next[k]));
+    subs.forEach(s=>pushedSubs.add(s.id));
+    localStorage.setItem("dn2_pushed_v1", JSON.stringify(Array.from(pushedSubs)));
+    if(!hasCfg && !isSeededCfg()) cloudPush(K_CFG);
+    cloudStatus="shared"; setDbStatus();
+    return true;
+  }catch(e){ cloudStatus="error"; setDbStatus(); return false; }
+}
+async function refreshAdmin(){ await cloudPull(); route(); }
+function maybeRerender(){
+  // Never yank the page while someone is typing code or editing in admin.
+  const h=location.hash||"#/";
+  if(h==="#/" || h.indexOf("#/submitted")===0){ route(); return; }
+  if(h.indexOf("#/admin")===0){
+    const ae=document.activeElement;
+    if(ae && (ae.tagName==="INPUT"||ae.tagName==="TEXTAREA"||ae.tagName==="SELECT")) return;
+    route();
+  }
+}
+async function cloudBoot(){
+  if(!CLOUD){ setDbStatus(); return; }
+  const changed = await cloudPull();
+  if(changed) maybeRerender();
+  setInterval(async()=>{ const c=await cloudPull(); if(c) maybeRerender(); }, 5000);
+}
+function setDbStatus(){
+  const el=document.getElementById("dbStatus"); if(!el) return;
+  el.textContent = cloudStatus==="shared" ? "● Shared DB connected" : cloudStatus==="error" ? "● Shared DB error — working locally" : cloudStatus==="connecting" ? "● Connecting to shared DB…" : "○ Local only — Supabase not configured";
+  el.style.color = cloudStatus==="shared" ? "var(--green)" : "var(--muted)";
+}
+async function hashPw(pw){
+  try{ if(window.crypto && crypto.subtle){ const b=await crypto.subtle.digest("SHA-256", new TextEncoder().encode("firstbyte:"+pw)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); } }catch(e){}
+  let h=0x811c9dc5; for(const c of String(pw)){ h^=c.charCodeAt(0); h=Math.imul(h,0x01000193)>>>0; } return "fnv"+h.toString(16);
+}
+function seedConfig(){
+  const start=new Date(); const end=new Date(start.getTime()+60*60000);
+  return {title:"FirstByte", description:"An introductory coding and problem-solving competition organized by DevNest — Coding Club, NIELIT Ropar. 60 minutes, 5 questions, C and Python only.",
+    rules:["Solve independently — no AI tools, no external help.","Your code runs on this site itself (Run & Verify) — do not run it on your own machine.","You can resubmit a question any number of times till the timer ends.","Score per question = base points by difficulty, minus the wrong-attempt penalty per wrong attempt, minus the per-minute penalty per minute taken. Fastest correct solutions score highest.","Final score is normalized to 100: (total points earned ÷ total possible points) × 100. A perfect run is 100.","Scores are hidden during the contest — they are revealed after the contest ends.","Your score is shown after the contest ends. The Certificate of Participation appears after the contest ends — or earlier, if the admin opens it."],
+    durationMin:60, base:{Easy:100,Medium:150,Hard:200}, wrongPenalty:10, minutePenalty:1, certOpen:false, certImage:null, startAt:start.toISOString(), endAt:end.toISOString(),
+    questions:[
+      {id:"q4",title:"Factorial of a Number",difficulty:"Easy",statement:"Write a program to find the factorial of a given non-negative integer N. The factorial is the product of all positive integers from 1 to N. The factorial of 0 is 1. Input: a single integer N (0 ≤ N ≤ 20). Output: N! as an integer.\n\nExample:\nInput: 5\nOutput: 120",
+       sampleInput:"5",sampleOutput:"120",
+       starter:{python:"import sys\ndef solve():\n    n = int(sys.stdin.read().strip())\n    # write your solution here\n    pass\n\nif __name__ == '__main__':\n    solve()",
+       c:"#include <stdio.h>\nint main(){\n    int n;\n    if(scanf(\"%d\", &n) != 1) return 0;\n    /* write your solution here: print n! (use long long - 20! fits in 64 bits) */\n    return 0;\n}"}},
+      {id:"q5",title:"Swap Two Numbers",difficulty:"Easy",statement:"Write a program to swap two given integers A and B. After swapping, A should contain the original value of B, and B should contain the original value of A. Input: two integers A and B separated by a space (-10^9 ≤ A, B ≤ 10^9). Output: B followed by A, separated by a space.\n\nExample:\nInput: 10 20\nOutput: 20 10",
+       sampleInput:"10 20",sampleOutput:"20 10",
+       starter:{python:"import sys\ndef solve():\n    a, b = map(int, sys.stdin.read().split())\n    # write your solution here\n    pass\n\nif __name__ == '__main__':\n    solve()",
+       c:"#include <stdio.h>\nint main(){\n    int a, b;\n    if(scanf(\"%d %d\", &a, &b) != 2) return 0;\n    /* write your solution here: print B then A */\n    return 0;\n}"}},
+      {id:"q6",title:"Reverse a Number",difficulty:"Easy",statement:"Write a program to reverse the digits of a given integer N. Ignore leading zeros in the reversed result and preserve the negative sign. Input: a single integer N (-10^9 ≤ N ≤ 10^9). Output: the reversed number.\n\nExample:\nInput: 1234\nOutput: 4321",
+       sampleInput:"1234",sampleOutput:"4321",
+       starter:{python:"import sys\ndef solve():\n    n = int(sys.stdin.read().strip())\n    # write your solution here\n    pass\n\nif __name__ == '__main__':\n    solve()",
+       c:"#include <stdio.h>\n#include <stdlib.h>\nint main(){\n    int n;\n    if(scanf(\"%d\", &n) != 1) return 0;\n    /* write your solution here: reverse the digits, keep the sign */\n    return 0;\n}"}},
+      {id:"q7",title:"Count Vowels in a String",difficulty:"Easy",statement:"Write a program to count the total number of vowels (a, e, i, o, u) in a given string. Both uppercase and lowercase vowels should be counted. Input: one line with the string (length 1 to 1000). Output: the vowel count.\n\nExample:\nInput: hello world\nOutput: 3",
+       sampleInput:"hello world",sampleOutput:"3",
+       starter:{python:"import sys\ndef solve():\n    s = sys.stdin.read().rstrip(\"\\n\")\n    # write your solution here: count the vowels in s, upper and lower case\n    pass\n\nif __name__ == '__main__':\n    solve()",
+       c:"#include <stdio.h>\n#include <string.h>\n#include <ctype.h>\nint main(){\n    char s[1001];\n    if(!fgets(s, sizeof s, stdin)) return 0;\n    /* write your solution here: count the vowels (a, e, i, o, u) in s, upper and lower case */\n    return 0;\n}"}},
+      {id:"q8",title:"GCD of Two Numbers",difficulty:"Easy",statement:"Write a program to find the Greatest Common Divisor (GCD) of two given non-negative integers A and B. The GCD is the largest positive integer that divides both numbers without leaving a remainder. Input: two integers A and B separated by a space (0 ≤ A, B ≤ 10^9; at least one number is greater than 0). Output: the GCD.\n\nExample:\nInput: 12 18\nOutput: 6",
+       sampleInput:"12 18",sampleOutput:"6",
+       starter:{python:"import sys\ndef solve():\n    a, b = map(int, sys.stdin.read().split())\n    # write your solution here\n    pass\n\nif __name__ == '__main__':\n    solve()",
+       c:"#include <stdio.h>\nint main(){\n    int a, b;\n    if(scanf(\"%d %d\", &a, &b) != 2) return 0;\n    /* write your solution here: print the GCD of a and b */\n    return 0;\n}"}},
+    ]};
+}
+function loadCfg(){ const c=loadJ(K_CFG,null); if(c&&c.questions&&c.questions.length){ if(!c.base) c.base={Easy:100,Medium:150,Hard:200}; if(c.wrongPenalty==null) c.wrongPenalty=10; if(c.minutePenalty==null) c.minutePenalty=1; return c; } const s=seedConfig(); saveJLocal(K_CFG,s); localStorage.setItem("dn2_cfg_seed_v1","1"); return s; }
+function basePts(cfg,d){ return (cfg.base&&cfg.base[d]!=null)?cfg.base[d]:(BASE[d]||100); }
+function saveCfg(c){ localStorage.removeItem("dn2_cfg_seed_v1"); saveJ(K_CFG,c); }
+function currentUser(){ const em=loadJ(K_SESS,null); if(!em) return null; const u=(loadJ(K_USERS,[])).find(x=>x.email===em); return u||null; }
+function status(cfg){ const t=Date.now(); if(t<new Date(cfg.startAt).getTime()) return "upcoming"; if(t>new Date(cfg.endAt).getTime()) return "ended"; return "live"; }
+function isEnded(cfg){ return Date.now() > new Date(cfg.endAt).getTime(); }
+function certVisible(cfg){ return cfg.certOpen===true || isEnded(cfg); }
+function diffBadge(d){ const k=String(d||"Easy").toLowerCase(); return '<span class="diff diff-'+(k==="medium"?"medium":k==="hard"?"hard":"easy")+'">'+esc(d)+'</span>'; }
+function fmt(ms){ if(ms<0) ms=0; const s=Math.floor(ms/1000); return String(Math.floor(s/3600)).padStart(2,"0")+":"+String(Math.floor(s%3600/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }
+function fmtDur(sec){ if(sec==null) return "—"; const m=Math.floor(sec/60), s=Math.round(sec%60); return m+":"+String(s).padStart(2,"0")+" min"; }
+function fmtScore(x){ return String(Math.round(x*10)/10); }
+function fmtDT(iso){ try{ return new Date(iso).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}); }catch(e){ return iso; } }
+function fmtDateLong(iso){ try{ return new Date(iso).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}); }catch(e){ return iso; } }
+/* ---------- progress + score ---------- */
+function loadProg(){ return loadJ(K_PROG,{}); }
+function progFor(email,qid){ const p=loadProg(); p[email]=p[email]||{}; p[email][qid]=p[email][qid]||{firstOpenedAt:null,attempts:0,wrong:0,solvedAt:null,solveSeconds:null}; return p[email][qid]; }
+function saveProgRec(email,qid,rec){ const p=loadProg(); p[email]=p[email]||{}; p[email][qid]=rec; saveJ(K_PROG,p); }
+function scoreFor(cfg,email){
+  const p=(loadProg()[email])||{}; let total=0, maxTotal=0; const rows=[];
+  const wp=cfg.wrongPenalty!=null?cfg.wrongPenalty:10, mp=cfg.minutePenalty!=null?cfg.minutePenalty:1;
+  cfg.questions.forEach(q=>{
+    const r=p[q.id]; const base=basePts(cfg,q.difficulty);
+    let sc=0, solved=false, secs=null, wrong=0, attempts=0;
+    if(r){ wrong=r.wrong||0; attempts=r.attempts||0; if(r.solvedAt){ solved=true; secs=r.solveSeconds; sc=Math.max(0, base - wp*wrong - mp*Math.floor((secs||0)/60)); } }
+    total+=sc; maxTotal+=base; rows.push({q,base,wrong,attempts,solved,secs,score:sc});
+  });
+  const solvedRows=rows.filter(r=>r.solved);
+  const avg=solvedRows.length? solvedRows.reduce((a,r)=>a+r.secs,0)/solvedRows.length : null;
+  const final=maxTotal? total/maxTotal*100 : 0;
+  return {total,final,maxTotal,rows,solvedCount:solvedRows.length,avg};
+}
+</script>
+<script>
+"use strict";
+/* ---------- router ---------- */
+let timerHandle=null;
+let lastHash=location.hash||"#/";
+let navGuardBypass=false;
+function go(h){ if(location.hash===h){ route(); } else location.hash=h; }
+function hasUnsubmittedCode(){
+  if(!currentQ) return false;
+  const ta=$("#code"); if(!ta) return false;
+  const code=ta.value; if(!code.trim()) return false;
+  const u=currentUser(); if(!u) return false;
+  const subs=loadJ(K_SUB,[]).filter(s=>s.email===u.email && s.questionId===currentQ.id);
+  const last=subs[subs.length-1];
+  return !last || last.code!==code;
+}
+function leaveGuard(e){ if(hasUnsubmittedCode()){ e.preventDefault(); e.returnValue=""; } }
+function route(){
+  if(timerHandle){ clearInterval(timerHandle); timerHandle=null; }
+  window.removeEventListener("beforeunload", leaveGuard);
+  const newHash=location.hash||"#/";
+  if(!navGuardBypass && lastHash.indexOf("#/arena/")===0 && newHash!==lastHash && hasUnsubmittedCode()){
+    if(!confirm("You have code that hasn't been submitted yet. Leave without submitting? (Your draft is autosaved.)")){ navGuardBypass=true; location.hash=lastHash; return; }
+  }
+  navGuardBypass=false;
+  lastHash=newHash;
+  renderNavAuth();
+  const h=(location.hash||"#/").slice(2);
+  const parts=h.split("/");
+  if(parts[0]==="auth") return renderAuth(parts[1]||"login");
+  if(parts[0]==="arena") return renderArena(parts[1]);
+  if(parts[0]==="submitted") return renderSubmitted();
+  if(parts[0]==="certificate") return renderCertificate(parts[1]);
+  if(parts[0]==="admin") return renderAdmin();
+  return renderHome();
+}
+window.addEventListener("hashchange",route);
+function renderNavAuth(){
+  const u=currentUser(); const el=$("#navAuth"); if(!el) return;
+  el.innerHTML = u ? '<span class="small">'+esc(u.name)+'</span> <a href="#/" id="logoutLink">Logout</a>'
+    : '<a href="#/auth/login">Login</a> <a href="#/auth/signup">Sign up</a>';
+  const lo=$("#logoutLink"); if(lo) lo.onclick=e=>{ e.preventDefault(); saveJ(K_SESS,null); go("#/"); };
+}
+function timerBox(cfg){
+  const st=status(cfg);
+  const badge=st==="live"?'<span class="badge live">● LIVE</span>':st==="upcoming"?'<span class="badge soon">UPCOMING</span>':'<span class="badge over">ENDED</span>';
+  return '<div class="card timerbar"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center"><div><div>'+badge+'</div><div class="small" style="margin-top:6px">Starts '+esc(fmtDT(cfg.startAt))+' &nbsp;·&nbsp; Ends '+esc(fmtDT(cfg.endAt))+'</div></div><div style="text-align:right"><div class="small" id="timerLabel">'+(st==="live"?"Time remaining":st==="upcoming"?"Starts in":"Contest ended")+'</div><div class="timer" id="timer">--:--:--</div></div></div></div>';
+}
+function startTimer(cfg,onEnd){
+  let prev=status(cfg);
+  const tick=()=>{
+    const el=$("#timer"); if(!el) return;
+    const c=loadCfg(); const st=status(c);
+    if(st==="live"){ const ms=new Date(c.endAt).getTime()-Date.now(); el.textContent=fmt(ms); el.className="timer"+(ms<5*60000?" warn":""); if(ms<60000) el.className="timer crit"; const l=$("#timerLabel"); if(l) l.textContent="Time remaining"; if(ms<=0 && onEnd) onEnd(); }
+    else if(st==="upcoming"){ el.textContent=fmt(new Date(c.startAt).getTime()-Date.now()); el.className="timer"; }
+    else { el.textContent="00:00:00"; el.className="timer"; if(prev!=="ended"){ if(onEnd) onEnd(); else route(); } }
+    prev=st;
+  };
+  tick(); timerHandle=setInterval(tick,1000);
+}
+/* ---------- auth: email + password (local, short-lived site) ---------- */
+function renderAuth(mode){
+  const isSignup=mode==="signup";
+  $("#app").innerHTML='<div class="card" style="max-width:480px;margin:30px auto"><h2>'+(isSignup?"Create your account":"Login")+'</h2><p class="muted">'+(isSignup?"One account for FirstByte. Your submissions, score and certificate belong to this login.":"Log in with the email and password you signed up with to see your result and certificate.")+'</p>'
+  +(isSignup?'<label>Full name (appears on the certificate)</label><input id="aName" placeholder="Your full name">':"")
+  +(isSignup?'<label>Registration number</label><input id="aRegNo" placeholder="Your registration / roll number">':"")
+  +'<label>Email</label><input id="aEmail" type="email" placeholder="you@example.com"><label>Password'+(isSignup?" (min 6 characters)":"")+'</label><input id="aPass" type="password" placeholder="Password"><p style="margin-top:14px"><button class="btn" id="aGo">'+(isSignup?"Sign up":"Login")+'</button> <span class="small" id="aMsg"></span></p><p class="small" style="margin-top:10px">'+(isSignup?'Already have an account? <a href="#/auth/login">Login</a>':'New here? <a href="#/auth/signup">Create an account</a>')+'</p></div>';
+  $("#aGo").onclick=async()=>{
+    const email=$("#aEmail").value.trim().toLowerCase(), pw=$("#aPass").value;
+    const msg=$("#aMsg");
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg.textContent="Enter a valid email."; return; }
+    if(pw.length<6){ msg.textContent="Password must be at least 6 characters."; return; }
+    const users=loadJ(K_USERS,[]);
+    if(isSignup){
+      const name=$("#aName").value.trim(); if(!name){ msg.textContent="Enter your full name."; return; }
+      const regNo=$("#aRegNo").value.trim(); if(!regNo){ msg.textContent="Enter your registration number."; return; }
+      if(users.find(u=>u.email===email)){ msg.textContent="An account with this email already exists — please log in."; return; }
+      users.push({name,email,regNo,passHash:await hashPw(pw),createdAt:nowISO()}); saveJ(K_USERS,users);
+      saveJ(K_SESS,email); msg.textContent="Account created ✓"; go("#/");
+    } else {
+      const u=users.find(x=>x.email===email);
+      if(!u){ msg.textContent="No account with this email — please sign up first."; return; }
+      if(u.passHash!==await hashPw(pw)){ msg.textContent="Wrong password."; return; }
+      saveJ(K_SESS,email); go("#/");
+    }
+  };
+}
+/* ---------- home ---------- */
+function renderHome(){
+  const cfg=loadCfg(); const u=currentUser(); const subs=loadJ(K_SUB,[]).filter(s=>u&&s.email===u.email);
+  const ended=isEnded(cfg);
+  $("#app").innerHTML=
+  '<div class="hero"><div class="kicker">Coding Contest · NIELIT Ropar</div><h1>'+esc(cfg.title)+'<br><span>Timer. Code. Submit.</span></h1><p>'+esc(cfg.description)+'</p><div class="contest-stats"><span><b>'+cfg.questions.length+'</b> Problems</span><span><b>'+cfg.durationMin+'</b> Minutes</span><span><b>C &amp; Python</b></span><span><b>100</b> Points max</span></div></div>'
+  +timerBox(cfg)
+  +(u
+    ? '<div class="card"><h2>Welcome, '+esc(u.name)+'</h2><p class="muted">Logged in as '+esc(u.email)+(u.regNo?' · Registration No: <b>'+esc(u.regNo)+'</b>':"")+'</p>'+(ended?'<p style="margin-top:8px"><b>Results are out!</b> <a href="#/submitted">View your score &amp; certificate →</a></p>':certVisible(cfg)?'<p style="margin-top:8px"><b>Your certificate is available!</b> <a href="#/submitted">Get your certificate →</a> Your score will appear here after the contest ends.</p>':'<p style="margin-top:8px">Your score and certificate will appear here after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b>. <a href="#/submitted">My submissions →</a></p>')+'</div>'
+    : '<div class="card"><h2>Login to participate</h2><p class="muted">FirstByte is live for a few days only. Create an account with your email and a password — your submissions, score and certificate belong to that login.</p><p style="margin-top:12px"><a class="btn" href="#/auth/signup">Sign up</a> <a class="btn ghost" href="#/auth/login">Login</a></p></div>')
+  +'<div class="card"><h2>How the contest works</h2><ol style="padding-left:20px;color:var(--muted)"><li><b>Sign up</b> with your email — one account for everything.</li><li><b>Open a question</b>, write C or Python, click Run &amp; Verify — the site runs your code and checks it. Submit before the timer ends.</li><li><b>After the contest ends</b>, come back here to see your score and download your Certificate of Participation.</li></ol></div>'
+  +'<div class="card"><h2>Problems ('+cfg.questions.length+') — C &amp; Python only</h2><table><tr><th>#</th><th>Problem</th><th>Difficulty</th><th>Points</th><th>Status</th><th></th></tr>'+cfg.questions.map((q,i)=>{ const r=u?(loadProg()[u.email]||{})[q.id]:null; const tag=r&&r.solvedAt?'<span class="pass">✓ Solved</span>':r&&r.attempts?'<span class="small">Attempted ('+r.attempts+')</span>':'<span class="small">—</span>'; return '<tr><td>'+(i+1)+'</td><td><b>'+esc(q.title)+'</b><div class="small">'+esc(q.statement.slice(0,90))+'…</div></td><td>'+diffBadge(q.difficulty)+'</td><td>'+basePts(cfg,q.difficulty)+'</td><td>'+tag+'</td><td><button class="btn ghost" data-q="'+q.id+'">Open →</button></td></tr>'; }).join("")+'</table></div>'
+  +'<div class="card"><h2>Rules &amp; scoring</h2><ul style="padding-left:20px;color:var(--muted)">'+cfg.rules.map(r=>"<li>"+esc(r)+"</li>").join("")+'</ul><p class="small" style="margin-top:10px">Score per question = base points − wrong-attempt penalty per wrong attempt − per-minute penalty per minute taken (minimum 0). Final score = (total earned ÷ total possible) × 100. Average solve time is the mean of the times for the questions you solved.</p></div>'
+  +(subs.length?'<div class="card"><h2>Your submissions ('+subs.length+')</h2><p><a href="#/submitted">View my submissions →</a></p></div>':"");
+  startTimer(cfg);
+  document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{ if(!currentUser()){ go("#/auth/login"); return; } go("#/arena/"+b.dataset.q); });
+}
+</script>
+<script>
+"use strict";
+/* ---------- arena + site-run verify (Judge0 CE: C gcc 14 = 103, Python = 71) ---------- */
+let currentQ=null, verifyState=null, lastRunOutput=null;
+const LANG_ID={c:103,python:71};
+/* ---------- code editor: line numbers + syntax highlight (no dependency) ---------- */
+const PY_KW=["import","from","def","return","if","elif","else","for","while","in","not","and","or","pass","break","continue","class","try","except","finally","with","as","lambda","True","False","None","print","len","range","str","int","list","dict","set","is","raise","global","del","yield","assert"];
+const C_KW=["int","char","float","double","void","return","if","else","for","while","do","switch","case","break","continue","struct","include","define","sizeof","static","const","long","short","unsigned","signed","enum","typedef","printf","scanf","main","string","size_t","NULL"];
+function highlightCode(code,lang){
+  const kw=new Set(lang==="c"?C_KW:PY_KW);
+  const re=lang==="c"
+    ? /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)/g
+    : /(#[^\n]*)|("""[\s\S]*?"""|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|(\b\d+(?:\.\d+)?\b)|([A-Za-z_][A-Za-z0-9_]*)/g;
+  let out="", last=0, m;
+  while((m=re.exec(code))){
+    out+=esc(code.slice(last,m.index));
+    const tok=m[0];
+    if(m[1]) out+='<span class="tk-com">'+esc(tok)+'</span>';
+    else if(m[2]) out+='<span class="tk-str">'+esc(tok)+'</span>';
+    else if(m[3]) out+='<span class="tk-num">'+esc(tok)+'</span>';
+    else if(m[4]) out+=kw.has(tok)?'<span class="tk-kw">'+esc(tok)+'</span>':esc(tok);
+    last=m.index+tok.length;
+  }
+  out+=esc(code.slice(last));
+  return out;
+}
+function syncEditor(){
+  const ta=$("#code"); if(!ta) return;
+  const lang=($("#lang")||{}).value||"python";
+  const code=ta.value;
+  const hl=$("#codeHl"); if(hl) hl.innerHTML=highlightCode(code,lang)+"\n";
+  const g=$("#codeGutter");
+  if(g){ const n=code.split("\n").length; let s=""; for(let i=1;i<=n;i++) s+=i+"\n"; g.textContent=s; }
+  syncEditorScroll();
+}
+function syncEditorScroll(){
+  const ta=$("#code"); if(!ta) return;
+  const pre=$("#codeHlPre"); if(pre){ pre.scrollTop=ta.scrollTop; pre.scrollLeft=ta.scrollLeft; }
+  const g=$("#codeGutter"); if(g) g.style.transform="translateY("+(-ta.scrollTop)+"px)";
+}
+async function runViaProxy(lang,code,stdin){
+  // Same-origin runner: /api/run (Vercel function, or server.cjs locally).
+  // POST creates the run and returns a token; GET polls until done.
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),15000);
+  let r;
+  try{ r=await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:lang,code,stdin}),signal:ctrl.signal}); }
+  catch(e){ clearTimeout(to); return {ok:false,error:"network"}; }
+  clearTimeout(to);
+  if(r.status===404) return {ok:false,error:"no-proxy"};
+  if(!r.ok){ let m="Runner returned HTTP "+r.status; try{ const j=await r.json(); if(j.error) m=j.error; }catch(e){} return {ok:false,error:m}; }
+  const created=await r.json();
+  if(!created.token) return {ok:false,error:"Runner did not return a run token."};
+  for(let i=0;i<30;i++){
+    await new Promise(res=>setTimeout(res,2000));
+    try{
+      const g=await fetch("/api/run?token="+encodeURIComponent(created.token));
+      if(!g.ok) continue;
+      const d=await g.json();
+      if(d.done) return {ok:true,data:d};
+    }catch(e){ /* keep polling */ }
+  }
+  return {ok:false,error:"Run timed out after ~60s. Try again — your code is still saved."};
+}
+async function runDirect(lang,code,stdin){
+  const body={source_code:code,language_id:LANG_ID[lang],stdin:stdin};
+  const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),60000);
+  try{
+    const r=await fetch("https://ce.judge0.com/submissions?base64_encoded=false&wait=true",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctrl.signal});
+    clearTimeout(to);
+    if(!r.ok) return {ok:false,error:"Runner returned HTTP "+r.status+". Try again — your code is still saved."};
+    return {ok:true,data:await r.json()};
+  }catch(e){ clearTimeout(to); return {ok:false,error:"Runner unreachable ("+(e.name||"network")+"). Check your internet and try again — your code is still saved, and you can still submit."}; }
+}
+async function runOnSite(lang,code,stdin){
+  const via=await runViaProxy(lang,code,stdin);
+  if(via.ok) return via;
+  if(via.error==="no-proxy" || via.error==="network"){
+    // No serverless runner on this host (plain static hosting) — try the public runner directly.
+    const direct=await runDirect(lang,code,stdin);
+    if(direct.ok) return direct;
+    return direct;
+  }
+  return via;
+}
+function renderArena(qid){
+  const cfg=loadCfg(); const u=currentUser();
+  if(!u){ $("#app").innerHTML='<div class="card"><h2>Login required</h2><p class="muted">Log in to open a question and submit. Your score and certificate belong to your login.</p><p style="margin-top:12px"><a class="btn" href="#/auth/login">Login</a> <a class="btn ghost" href="#/auth/signup">Sign up</a></p></div>'; return; }
+  const q=cfg.questions.find(x=>x.id===qid)||cfg.questions[0]; currentQ=q; verifyState=null; lastRunOutput=null;
+  const st=status(cfg);
+  const rec=progFor(u.email,q.id);
+  if(!rec.firstOpenedAt && st==="live"){ rec.firstOpenedAt=nowISO(); saveProgRec(u.email,q.id,rec); }
+  if(st!=="live"){
+    $("#app").innerHTML='<div class="card"><h2>'+esc(q.title)+'</h2><p class="muted">The contest is '+(st==="upcoming"?"not live yet — it starts at "+esc(fmtDT(cfg.startAt)):"over — submissions are closed")+'.</p><p style="margin-top:12px"><a href="#/">← Back home</a></p></div>'+timerBox(cfg);
+    startTimer(cfg); return;
+  }
+  const drafts=loadJ(K_DRAFT,{});
+  const lang=(drafts[q.id]&&drafts[q.id].lang)||"python";
+  const code=(drafts[q.id]&&drafts[q.id].code!==undefined)?drafts[q.id].code:(q.starter[lang]||"");
+  $("#app").innerHTML=
+  '<p style="margin-top:16px"><a href="#/">← All questions</a></p>'
+  +timerBox(cfg)
+  +'<div class="card"><h2>'+esc(q.title)+'</h2><p class="small">Problem '+(cfg.questions.findIndex(x=>x.id===q.id)+1)+' of '+cfg.questions.length+' &nbsp;·&nbsp; '+diffBadge(q.difficulty)+' &nbsp;·&nbsp; '+basePts(cfg,q.difficulty)+' points</p><p style=\"white-space:pre-wrap\">'+esc(q.statement)+'</p><h3>Sample input (from admin)</h3><pre>'+esc(q.sampleInput)+'</pre><h3>Expected output (from admin)</h3><pre>'+esc(q.sampleOutput)+'</pre><p class="small">Attempts so far on this question: <b>'+(rec.attempts||0)+'</b> &nbsp;·&nbsp; Wrong attempts: <b>'+(rec.wrong||0)+'</b>'+(rec.solvedAt?' &nbsp;·&nbsp; <span class="pass">✓ Solved</span>':"")+'</p></div>'
+  +'<div class="card"><h2>Your code — runs on this site</h2><div class="row"><div><label>Language</label><select id="lang"><option value="python">Python</option><option value="c">C (gcc)</option></select></div><div><label>Logged in as</label><input value="'+esc(u.name+" · "+u.email+(u.regNo?" · Reg. "+u.regNo:""))+'" disabled></div></div>'
+  +'<label style="margin-top:12px">Code — autosaves as you type</label><div class="editor"><div class="editor-gutter" id="codeGutter" aria-hidden="true">1</div><div class="editor-body"><pre class="editor-hl" id="codeHlPre" aria-hidden="true"><code id="codeHl"></code></pre><textarea id="code" spellcheck="false">'+esc(code)+'</textarea></div></div><p class="small" id="draftMsg">Draft autosaved in this browser.</p>'
+  +'<h3>Run &amp; Verify — the site runs your code</h3><p class="muted">Click Run &amp; Verify and this site runs your code against the sample input above and compares the output with the expected output. Do not run the code on your own machine. A wrong output, compile error or runtime error counts as one wrong attempt (−10 points).</p><p><button class="btn" id="runBtn">▶ Run &amp; Verify</button> <span id="runMsg"></span></p><div id="runOut"></div>'
+  +'<p style="margin-top:16px"><button class="btn ghost" id="submitBtn">Submit code</button> <span class="small" id="submitMsg"></span></p></div>';
+  startTimer(cfg,()=>autoSubmit());
+  window.addEventListener("beforeunload", leaveGuard);
+  const langSel=$("#lang"); langSel.value=lang;
+  langSel.onchange=()=>{ const d=loadJ(K_DRAFT,{}); d[q.id]={code:$("#code").value,lang:langSel.value}; saveJ(K_DRAFT,d); if(confirm("Switch language? This loads the starter code for the new language.")){ verifyState=null; const r0=progFor(u.email,q.id); r0.lastVerifiedCode=null; r0.verifiedAt=null; saveProgRec(u.email,q.id,r0); $("#code").value=q.starter[langSel.value]||""; const d2=loadJ(K_DRAFT,{}); d2[q.id]={code:$("#code").value,lang:langSel.value}; saveJ(K_DRAFT,d2); syncEditor(); } };
+  $("#code").addEventListener("input",()=>{ const d=loadJ(K_DRAFT,{}); d[q.id]={code:$("#code").value,lang:$("#lang").value}; saveJ(K_DRAFT,d); $("#draftMsg").textContent="Draft autosaved ✓ "+new Date().toLocaleTimeString(); if(verifyState==="passed"){ verifyState=null; const r0=progFor(u.email,q.id); r0.lastVerifiedCode=null; r0.verifiedAt=null; saveProgRec(u.email,q.id,r0); const rm=$("#runMsg"); if(rm) rm.innerHTML='<span class="small">Code changed — run &amp; verify again before submitting.</span>'; } syncEditor(); });
+  $("#code").addEventListener("scroll",syncEditorScroll);
+  $("#code").addEventListener("keydown",e=>{ if(e.key==="Tab"){ e.preventDefault(); const t=e.target, s=t.selectionStart; t.value=t.value.slice(0,s)+"  "+t.value.slice(t.selectionEnd); t.selectionStart=t.selectionEnd=s+2; t.dispatchEvent(new Event("input")); } });
+  syncEditor();
+  $("#runBtn").onclick=async()=>{
+    if(status(loadCfg())!=="live"){ $("#runMsg").innerHTML='<span class="fail">Contest has ended — Run &amp; Verify is closed.</span>'; return; }
+    const btn=$("#runBtn"); btn.disabled=true; $("#runMsg").textContent=" Running on the site… (can take a few seconds)"; $("#runOut").innerHTML="";
+    const code=$("#code").value, lg=$("#lang").value;
+    const r=await runOnSite(lg,code,q.sampleInput);
+    btn.disabled=false;
+    const rec2=progFor(u.email,q.id);
+    if(!r.ok){ $("#runMsg").innerHTML='<span class="fail">'+esc(r.error)+'</span>'; verifyState="unavailable"; return; }
+    const d=r.data, stDesc=(d.status&&d.status.description)||"";
+    const outTxt=d.stdout==null?"":String(d.stdout);
+    const errTxt=[d.compile_output,d.stderr].filter(Boolean).join("\n");
+    lastRunOutput=outTxt;
+    rec2.attempts=(rec2.attempts||0)+1;
+    if(stDesc==="Accepted" && norm(outTxt)===norm(q.sampleOutput)){
+      verifyState="passed";
+      rec2.lastVerifiedCode=code; rec2.verifiedAt=nowISO();
+      saveProgRec(u.email,q.id,rec2);
+      $("#runMsg").innerHTML='<span class="pass">✓ Sample verified — output matches. Submit this code to count it as solved.</span>';
+      $("#runOut").innerHTML='<h3>Your program\u2019s output</h3><pre>'+esc(outTxt)+'</pre>';
+    } else {
+      verifyState="failed"; if(!rec2.solvedAt){ rec2.wrong=(rec2.wrong||0)+1; } saveProgRec(u.email,q.id,rec2);
+      const why=stDesc==="Accepted"?"Output does not match the expected output.":stDesc+": "+(errTxt||"see details below");
+      $("#runMsg").innerHTML='<span class="fail">✗ Wrong attempt ('+rec2.wrong+' so far). '+esc(why)+'</span>';
+      $("#runOut").innerHTML='<h3>Expected output</h3><pre>'+esc(q.sampleOutput)+'</pre><h3>Your program\u2019s output</h3><pre>'+esc(outTxt||"(no output)")+'</pre>'+(errTxt?'<h3>Error</h3><pre>'+esc(errTxt)+'</pre>':"");
+    }
+  };
+  $("#submitBtn").onclick=()=>doSubmit(false);
+}
+function doSubmit(isAuto){
+  const cfg=loadCfg(); const q=currentQ; if(!q) return;
+  const u=currentUser(); if(!u){ go("#/auth/login"); return; }
+  const code=$("#code").value;
+  if(!code.trim()){ const m=$("#submitMsg"); if(m) m.textContent="Your code is empty."; return; }
+  if(status(cfg)!=="live" && !isAuto){ const m=$("#submitMsg"); if(m) m.textContent="Contest is not live."; return; }
+  const subs=loadJ(K_SUB,[]);
+  const mySubs=subs.filter(s=>s.email===u.email);
+  const certId=(mySubs[0]&&mySubs[0].certId)||uid();
+  const subId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():uid();
+  const rec=progFor(u.email,q.id);
+  if(!rec.solvedAt && rec.lastVerifiedCode && rec.lastVerifiedCode===code){
+    rec.solvedAt=nowISO();
+    const t0=Math.max(new Date(rec.firstOpenedAt||rec.solvedAt).getTime(), new Date(cfg.startAt).getTime());
+    rec.solveSeconds=Math.max(0,Math.round((new Date(rec.solvedAt).getTime()-t0)/1000));
+    saveProgRec(u.email,q.id,rec);
+  } else if(!rec.solvedAt){
+    sessionStorage.setItem("dn2_submit_note","unverified");
+  }
+  subs.push({id:subId,certId,name:u.name,email:u.email,questionId:q.id,questionTitle:q.title,language:$("#lang").value,code,verify:verifyState||"skipped",auto:!!isAuto,submittedAt:nowISO(),contestTitle:cfg.title});
+  saveJ(K_SUB,subs);
+  go("#/submitted");
+}
+function autoSubmit(){
+  try{ const code=$("#code")?$("#code").value:""; if(code&&code.trim()&&currentQ){ verifyState=verifyState||"skipped"; doSubmit(true); alert("Time is up — your current code was auto-submitted."); } }catch(e){}
+}
+/* ---------- submitted: score breakdown + average time ---------- */
+function renderSubmitted(){
+  const cfg=loadCfg(); const u=currentUser();
+  if(!u){ $("#app").innerHTML='<div class="card"><h2>Login required</h2><p class="muted">Log in to see your result and certificate.</p><p style="margin-top:12px"><a class="btn" href="#/auth/login">Login</a></p></div>'; return; }
+  const subs=loadJ(K_SUB,[]).filter(s=>s.email===u.email);
+  const sc=scoreFor(cfg,u.email);
+  if(!subs.length){ $("#app").innerHTML='<div class="card"><h2>No submissions yet</h2><p class="muted">Open a question, run &amp; verify, and submit before the timer ends.</p><p style="margin-top:12px"><a href="#/">← Back home</a></p></div>'; return; }
+  const last=subs[subs.length-1];
+  const ended=isEnded(cfg);
+  const submitNote=sessionStorage.getItem("dn2_submit_note"); sessionStorage.removeItem("dn2_submit_note");
+  let html=timerBox(cfg)
+  +'<div class="card"><h2>✓ Submitted</h2><p>Your code for <b>'+esc(last.questionTitle)+'</b> was submitted at '+esc(fmtDT(last.submittedAt))+'.</p><p class="muted">Verify: <b>'+esc(last.verify)+'</b> &nbsp;·&nbsp; Language: '+esc(last.language)+(last.auto?" &nbsp;·&nbsp; Auto-submitted at time-up":"")+'</p>'
+  +(submitNote==="unverified"?'<p class="muted" style="margin-top:8px">Submitted, but not counted as solved — run &amp; verify this code first, then submit the same code.</p>':"")
+  +(certVisible(cfg)?'<p style="margin-top:14px"><a class="btn" href="#/certificate/'+last.id+'">Get Certificate of Participation →</a></p>':"")+'</div>';
+  if(ended){
+    html+='<div class="card"><h2>Your final score — '+fmtScore(sc.final)+' / 100</h2><p class="muted">Registration No: <b>'+esc(u.regNo||"—")+'</b> &nbsp;·&nbsp; Normalized to 100 &nbsp;·&nbsp; Total '+sc.total+' of '+sc.maxTotal+' possible points &nbsp;·&nbsp; Solved '+sc.solvedCount+'/'+cfg.questions.length+' &nbsp;·&nbsp; Average time to solve: <b>'+fmtDur(sc.avg)+'</b></p><table><tr><th>Question</th><th>Base</th><th>Wrong attempts</th><th>Time taken</th><th>Score</th></tr>'
+    +sc.rows.map(r=>'<tr><td>'+esc(r.q.title)+(r.solved?' <span class="pass">✓</span>':"")+'</td><td>'+r.base+'</td><td>'+r.wrong+'</td><td>'+fmtDur(r.secs)+'</td><td><b>'+r.score+'</b></td></tr>').join("")+'</table><p class="small" style="margin-top:8px">Score per question = base − wrong-attempt penalty per wrong attempt − per-minute penalty per minute taken (minimum 0). Final score = (total earned ÷ total possible) × 100, so a perfect run is 100. Average time is the mean of the times for the questions you solved.</p></div>';
+  } else if(certVisible(cfg)){
+    html+='<div class="card"><h2>Certificate is open</h2><p class="muted">The admin has opened certificates early — get yours from the button above or the table below. Your score will be revealed after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b>.</p></div>';
+  } else {
+    html+='<div class="card"><h2>Results after the contest ends</h2><p class="muted">Your score and Certificate of Participation will appear here after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b> — the timer above shows how long is left. Your submissions are safely stored in the database, and Admin can already see them.</p></div>';
+  }
+  html+='<div class="card"><h2>All your submissions ('+subs.length+')</h2><table><tr><th>Question</th><th>Language</th><th>Verify</th><th>Time</th>'+(certVisible(cfg)?'<th></th>':"")+'</tr>'+subs.map(s=>'<tr><td>'+esc(s.questionTitle)+'</td><td>'+esc(s.language)+'</td><td>'+esc(s.verify)+'</td><td>'+esc(fmtDT(s.submittedAt))+'</td>'+(certVisible(cfg)?'<td><a href="#/certificate/'+s.id+'">Certificate</a></td>':"")+'</tr>').join("")+'</table><p style="margin-top:12px"><button class="btn ghost" id="dlSubs">Download my submissions (.json)</button></p></div>';
+  $("#app").innerHTML=html;
+  startTimer(cfg);
+  $("#dlSubs").onclick=()=>download("firstbyte-submissions.json",JSON.stringify(subs,null,2),"application/json");
+}
+function download(name,text,type){ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([text],{type:type||"text/plain"})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); }
+</script>
+<script>
+"use strict";
+/* ---------- certificate: FirstByte design, name + date overlaid ---------- */
+function renderCertificate(subId){
+  const u=currentUser();
+  if(!u){ $("#app").innerHTML='<div class="card"><h2>Login required</h2><p class="muted">Log in with the email and password you signed up with to get your certificate.</p><p style="margin-top:12px"><a class="btn" href="#/auth/login">Login</a></p></div>'; return; }
+  const cfg=loadCfg();
+  if(!certVisible(cfg)){ $("#app").innerHTML='<div class="card"><h2>Certificate not open yet</h2><p class="muted">Your Certificate of Participation will be ready here after the contest ends at <b>'+esc(fmtDT(cfg.endAt))+'</b> — or as soon as the admin opens certificates.</p><p style="margin-top:12px"><a href="#/submitted">← My submissions</a></p></div>'+timerBox(cfg); startTimer(cfg); return; }
+  const subs=loadJ(K_SUB,[]).filter(s=>s.email===u.email);
+  const s=subs.find(x=>x.id===subId)||subs[subs.length-1];
+  if(!s){ $("#app").innerHTML='<div class="card"><h2>No submission found</h2><p class="muted">Submit at least one solution to get a Certificate of Participation.</p><p><a href="#/">← Back home</a></p></div>'; return; }
+  $("#app").innerHTML='<div class="noprint card"><h2>Certificate of Participation</h2><p class="muted">Issued for participating in '+esc(s.contestTitle||"FirstByte")+'. This is the official FirstByte design — your name and date are filled in on it. Participation only, no rank or score.</p><p class="muted">Registration No: <b>'+esc(u.regNo||"—")+'</b></p><p style="margin-top:12px"><button class="btn" onclick="window.print()">Download / Print as PDF</button> <a class="btn ghost" href="#/submitted">← My result</a></p></div>'
+  +'<div class="cert-wrap"><img src="'+esc(cfg.certImage||"certificate.jpg")+'" alt="FirstByte Certificate of Participation"><div class="cert-name">'+esc(s.name)+'</div><div class="cert-date">'+esc(fmtDateLong(s.submittedAt))+'</div><div class="cert-id">Certificate ID: '+esc(s.certId)+(u.regNo?' · Reg. No: '+esc(u.regNo):"")+'</div></div>';
+}
+/* ---------- admin ---------- */
+// Admin PIN is checked server-side (api/admin.js) against the ADMIN_PIN env var - see .env.example. It is deliberately NOT in this file.
+function renderAdmin(){
+  const unlocked=sessionStorage.getItem("dn2_admin")==="1";
+  if(!unlocked){
+    $("#app").innerHTML='<div class="card" style="max-width:480px;margin:30px auto"><h2>Admin login</h2><p class="muted">The PIN is set in the ADMIN_PIN env var (.env locally, Vercel dashboard in production). Default is <code>devnest</code> if unset. See README.md.</p><label>Admin PIN</label><input id="pin" type="password" placeholder="Enter PIN"><p style="margin-top:12px"><button class="btn" id="pinBtn">Enter admin</button> <span class="small" id="pinMsg"></span></p></div>';
+    $("#pinBtn").onclick=async()=>{ const pin=$("#pin").value; $("#pinMsg").textContent="Checking…"; try{ const r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({pin})}); if(r.ok){ sessionStorage.setItem("dn2_admin","1"); renderAdmin(); } else $("#pinMsg").textContent="Wrong PIN."; }catch(e){ $("#pinMsg").textContent="Admin login needs the server (run with server.cjs or deploy on Vercel) - the PIN is checked server-side."; } };
+    return;
+  }
+  const cfg=loadCfg(); const subs=loadJ(K_SUB,[]);
+  const users=loadJ(K_USERS,[]);
+  const regByEmail={}; users.forEach(us=>{ regByEmail[us.email]=us.regNo||""; });
+  const byEmail={};
+  users.forEach(us=>{ const sc=scoreFor(cfg,us.email); byEmail[us.email]={user:us,score:sc,subs:subs.filter(s=>s.email===us.email)}; });
+  $("#app").innerHTML='<div class="card"><h2>Admin panel</h2><p class="muted">'+(CLOUD?"Accounts, submissions and scores are shared through the Supabase database — this panel shows everyone, from any device. Data refreshes automatically every few seconds.":"Accounts, submissions and scores live in this browser only (no shared database configured). Ask participants to send their submission .json if they used another device (Import below), or connect Supabase for central data. See README.md.")+'</p><p class="small">Contest: <b>'+status(cfg)+'</b> · ends '+esc(fmtDT(cfg.endAt))+(CLOUD?' · live from the shared database':' · data on this device only')+'</p><p style="margin-top:10px"><button class="btn" id="refreshAdmin">Refresh</button> <button class="btn ghost" id="logoutAdmin">Log out</button></p></div>'
+  +'<div class="card"><h2>Contest</h2><div class="row"><div><label>Title</label><input id="cTitle" value="'+esc(cfg.title)+'"></div><div><label>Duration (minutes)</label><input id="cDur" type="number" value="'+cfg.durationMin+'"></div></div><div class="row"><div><label>Start (local date-time)</label><input id="cStart" type="datetime-local" value="'+esc(toLocalInput(cfg.startAt))+'"></div><div><label>End (local date-time)</label><input id="cEnd" type="datetime-local" value="'+esc(toLocalInput(cfg.endAt))+'"></div></div><div class="row"><div><label>Base points — Easy</label><input id="cBaseE" type="number" value="'+(cfg.base?cfg.base.Easy:100)+'"></div><div><label>Base points — Medium</label><input id="cBaseM" type="number" value="'+(cfg.base?cfg.base.Medium:150)+'"></div><div><label>Base points — Hard</label><input id="cBaseH" type="number" value="'+(cfg.base?cfg.base.Hard:200)+'"></div></div><div class="row"><div><label>Penalty per wrong attempt</label><input id="cWP" type="number" value="'+(cfg.wrongPenalty!=null?cfg.wrongPenalty:10)+'"></div><div><label>Penalty per minute taken</label><input id="cMP" type="number" value="'+(cfg.minutePenalty!=null?cfg.minutePenalty:1)+'"></div></div><label>Description</label><textarea id="cDesc" style="min-height:70px">'+esc(cfg.description)+'</textarea><p style="margin-top:12px"><button class="btn" id="saveCfg">Save contest</button> <button class="btn ghost" id="expCfg">Export config (.json)</button> <span class="small" id="cfgMsg"></span></p><p class="small">Quick set: <button class="btn ghost" id="startNow">Start now, 60 min</button></p></div>'
+  +'<div class="card"><h2>Certificate</h2><p class="muted">Show the Certificate of Participation whenever you want — even before the contest ends. You can also replace the certificate design with the one the team decides.</p><label><input type="checkbox" id="certOpen" style="width:auto"'+(cfg.certOpen?" checked":"")+' > Show certificate to participants now</label><p class="small">When off, the certificate appears automatically after the contest ends. When on, participants can get it right away — scores stay hidden until the end.</p><label>Change certificate design (image)</label><input type="file" id="certFile" accept="image/*"><p class="small" id="certImgMsg">Current design: '+(cfg.certImage?"Custom design (saved in the shared database).":"Built-in FirstByte design.")+' The name and date are overlaid at fixed positions tuned for the current design — if the new design puts the name elsewhere, the positions need adjusting. Keep the image under 500 KB if you can; the whole site re-downloads it every few seconds.</p><p style="margin-top:12px"><button class="btn" id="saveCert">Save certificate settings</button> <button class="btn ghost" id="resetCertImg">Reset to the built-in design</button> <span class="small" id="certMsg"></span></p></div>'
+  +'<div class="card"><h2>Questions ('+cfg.questions.length+')</h2>'+cfg.questions.map((q,i)=>'<div style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px"><div class="row"><div><label>Title</label><input data-f="title" data-i="'+i+'" value="'+esc(q.title)+'"></div><div><label>Difficulty</label><input data-f="difficulty" data-i="'+i+'" value="'+esc(q.difficulty)+'"></div></div><label>Statement</label><textarea data-f="statement" data-i="'+i+'" style="min-height:70px">'+esc(q.statement)+'</textarea><div class="row"><div><label>Sample input (admin-provided)</label><textarea data-f="sampleInput" data-i="'+i+'" style="min-height:70px">'+esc(q.sampleInput)+'</textarea></div><div><label>Expected output (admin-provided)</label><textarea data-f="sampleOutput" data-i="'+i+'" style="min-height:70px">'+esc(q.sampleOutput)+'</textarea></div></div><div class="row"><div><label>Starter code — Python</label><textarea data-starter="python" data-i="'+i+'" style="min-height:90px">'+esc(q.starter&&q.starter.python||"")+'</textarea></div><div><label>Starter code — C</label><textarea data-starter="c" data-i="'+i+'" style="min-height:90px">'+esc(q.starter&&q.starter.c||"")+'</textarea></div></div><p style="margin-top:8px"><button class="btn danger ghost" data-del="'+i+'">Delete this question</button></p></div>').join("")+'<p style="margin-top:12px"><button class="btn" id="saveQ">Save questions</button> <button class="btn ghost" id="addQ">+ Add question</button> <button class=\"btn ghost\" id=\"resetQ\">Reset to built-in set</button> <span class="small" id="qMsg"></span></p></div>'
+  +'<div class="card"><h2>Participants &amp; scores ('+users.length+')</h2>'+(users.length?'<table><tr><th>Name</th><th>Email</th><th>Reg. no</th><th>Final score (/100)</th><th>Solved</th><th>Attempts</th><th>Wrong</th><th>Avg solve time</th><th>Submissions</th></tr>'+users.map(us=>{ const b=byEmail[us.email]; const att=b.score.rows.reduce((a,r)=>a+r.attempts,0), wr=b.score.rows.reduce((a,r)=>a+r.wrong,0); return '<tr><td>'+esc(us.name)+'</td><td>'+esc(us.email)+'</td><td>'+esc(us.regNo||"—")+'</td><td><b>'+fmtScore(b.score.final)+'</b><br><span class="small">total '+b.score.total+'</span></td><td>'+b.score.solvedCount+'/'+cfg.questions.length+'</td><td>'+att+'</td><td>'+wr+'</td><td>'+fmtDur(b.score.avg)+'</td><td>'+b.subs.length+'</td></tr>'; }).join("")+'</table>':'<p class="muted">No accounts on this device yet.</p>')+'</div>'
+  +'<div class="card"><h2>Submissions on this device ('+subs.length+')</h2>'+(subs.length?'<table><tr><th>Name</th><th>Question</th><th>Lang</th><th>Verify</th><th>Time</th><th>Code</th></tr>'+subs.map((s,i)=>'<tr><td>'+esc(s.name)+'<br><span class="small">'+esc(s.email||"")+(regByEmail[s.email]?' · Reg. '+esc(regByEmail[s.email]):"")+'</span></td><td>'+esc(s.questionTitle)+'</td><td>'+esc(s.language)+'</td><td>'+esc(s.verify)+'</td><td>'+esc(fmtDT(s.submittedAt))+'</td><td><button class="btn ghost" data-view="'+i+'">View</button></td></tr>').join("")+'</table><pre id="viewCode" style="display:none;margin-top:12px"></pre>':'<p class="muted">No submissions on this device yet.</p>')
+  +'<p style="margin-top:12px"><button class="btn ghost" id="dlAll">Download all (.json)</button> <button class="btn ghost" id="dlCsv">Download all (.csv)</button> <label style="display:inline-block;margin-left:8px">Import submission .json <input type="file" id="impFile" accept=".json"></label> <button class="btn danger" id="clearSubs">Clear submissions</button></p></div>';
+  $("#refreshAdmin").onclick=()=>refreshAdmin();
+  $("#logoutAdmin").onclick=()=>{ sessionStorage.removeItem("dn2_admin"); renderAdmin(); };
+  $("#startNow").onclick=()=>{ const s=new Date(), e=new Date(s.getTime()+60*60000); $("#cStart").value=toLocalInput(s.toISOString()); $("#cEnd").value=toLocalInput(e.toISOString()); };
+  $("#saveCfg").onclick=()=>{ const c=loadCfg(); c.title=$("#cTitle").value.trim()||c.title; c.durationMin=parseInt($("#cDur").value)||60; c.description=$("#cDesc").value; const sv=$("#cStart").value, ev=$("#cEnd").value; if(sv){ const d=new Date(sv); if(!isNaN(d)) c.startAt=d.toISOString(); } if(ev){ const d=new Date(ev); if(!isNaN(d)) c.endAt=d.toISOString(); } const num=(id,fb)=>{ const v=parseInt($(id).value); return isNaN(v)?fb:v; }; c.base={Easy:num("#cBaseE",100),Medium:num("#cBaseM",150),Hard:num("#cBaseH",200)}; c.wrongPenalty=num("#cWP",10); c.minutePenalty=num("#cMP",1); saveCfg(c); $("#cfgMsg").textContent="Saved ✓"; };
+  $("#expCfg").onclick=()=>download("firstbyte-config.json",JSON.stringify(loadCfg(),null,2),"application/json");
+  $("#saveCert").onclick=()=>{ const c=loadCfg(); c.certOpen=$("#certOpen").checked; saveCfg(c); $("#certMsg").textContent="Saved ✓"; };
+  $("#certFile").onchange=e=>{ const f=e.target.files[0]; if(!f) return; if(!f.type||f.type.indexOf("image/")!==0){ alert("Please choose an image file."); return; } if(f.size>2*1024*1024){ alert("That image is too big (max 2 MB). Please use a smaller file."); return; } const r=new FileReader(); r.onload=()=>{ const c=loadCfg(); const co=$("#certOpen"); if(co) c.certOpen=co.checked; c.certImage=r.result; saveCfg(c); $("#certImgMsg").textContent="Custom design saved ✓ ("+f.name+", "+Math.round(f.size/1024)+" KB) — it will reach every participant through the shared database."; }; r.readAsDataURL(f); };
+  $("#resetCertImg").onclick=()=>{ if(confirm("Go back to the built-in certificate design?")){ const c=loadCfg(); const co=$("#certOpen"); if(co) c.certOpen=co.checked; c.certImage=null; saveCfg(c); renderAdmin(); } };
+  const applyQEdits=c=>{ document.querySelectorAll("[data-f]").forEach(el=>{ c.questions[parseInt(el.dataset.i)][el.dataset.f]=el.value; }); document.querySelectorAll("[data-starter]").forEach(el=>{ const qq=c.questions[parseInt(el.dataset.i)]; qq.starter=qq.starter||{python:"",c:""}; qq.starter[el.dataset.starter]=el.value; }); };
+  $("#saveQ").onclick=()=>{ const c=loadCfg(); applyQEdits(c); saveCfg(c); $("#qMsg").textContent="Saved ✓"; };
+  $("#resetQ").onclick=()=>{ if(confirm("Replace ALL questions with the built-in set (the 5 questions from the contest PDF)? Any edits you made to the current questions will be lost.")){ const c=loadCfg(); c.questions=seedConfig().questions; saveCfg(c); renderAdmin(); } };
+  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ const c=loadCfg(); if(c.questions.length<=1){ alert("A contest needs at least one question."); return; } if(confirm("Delete \""+c.questions[parseInt(b.dataset.del)].title+"\"?")){ applyQEdits(c); c.questions.splice(parseInt(b.dataset.del),1); saveCfg(c); renderAdmin(); } });
+  $("#addQ").onclick=()=>{ const c=loadCfg(); applyQEdits(c); const id="q"+Math.random().toString(36).slice(2,7); c.questions.push({id:id,title:"New question",difficulty:"Easy",statement:"Write the problem statement here.",sampleInput:"",sampleOutput:"",starter:{python:"import sys\ndef solve():\n    # write your solution here\n    pass\n\nif __name__ == '__main__':\n    solve()",c:"#include <stdio.h>\nint main(){\n    /* write your solution here */\n    return 0;\n}"}}); saveCfg(c); renderAdmin(); };
+  document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>{ const s=loadJ(K_SUB,[])[parseInt(b.dataset.view)]; const p=$("#viewCode"); p.style.display="block"; p.textContent="— "+s.name+" · "+s.questionTitle+" · "+s.language+" —\n\n"+s.code; });
+  $("#dlAll").onclick=()=>download("firstbyte-submissions.json",JSON.stringify(loadJ(K_SUB,[]),null,2),"application/json");
+  $("#dlCsv").onclick=()=>{ const rows=[["name","email","reg_no","question","language","verify","submittedAt","code"]].concat(loadJ(K_SUB,[]).map(s=>[s.name,s.email,regByEmail[s.email]||"",s.questionTitle,s.language,s.verify,s.submittedAt,(s.code||"").replace(/\n/g,"\\n")])); download("firstbyte-submissions.csv",rows.map(r=>r.map(v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"').join(",")).join("\n"),"text/csv"); };
+  $("#impFile").onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const arr=JSON.parse(r.result); const list=Array.isArray(arr)?arr:[arr]; const cur=loadJ(K_SUB,[]); list.forEach(s=>{ if(s&&s.code&&s.questionId) cur.push(s); }); saveJ(K_SUB,cur); renderAdmin(); }catch(err){ alert("Could not read that file: "+err.message); } }; r.readAsText(f); };
+  $("#clearSubs").onclick=async()=>{ if(confirm("Delete ALL submissions and their scores (progress) — on this device AND in the shared database? Accounts are kept. This cannot be undone.")){ const c=loadCfg(); c.clearedAt=nowISO(); saveCfg(c); localStorage.setItem("dn2_seen_clear_v1", c.clearedAt); saveJ(K_SUB,[]); saveJ(K_PROG,{}); pushedSubs.clear(); localStorage.setItem("dn2_pushed_v1","[]"); if(CLOUD){ try{ await cloudDeleteAll("firstbyte_submissions"); await cloudDeleteAll("firstbyte_progress"); }catch(e){ alert("Cleared on this device, but the shared database could not be cleared: "+e.message); } } renderAdmin(); } };
+}
+function toLocalInput(iso){ const d=new Date(iso); const p=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes()); }
+/* ---------- copy/paste guard: blocked for participants while the contest is live ---------- */
+function pasteGuardActive(){ if((location.hash||"#/").indexOf("#/admin")===0) return false; try{ return status(loadCfg())==="live"; }catch(e){ return false; } }
+function showPasteToast(){ let t=document.getElementById("pasteToast"); if(!t){ t=document.createElement("div"); t.id="pasteToast"; t.className="paste-toast"; t.textContent="Copy & paste are disabled during the contest."; document.body.appendChild(t); } t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2200); }
+["copy","cut","paste"].forEach(ev=>document.addEventListener(ev,e=>{ if(pasteGuardActive()){ e.preventDefault(); showPasteToast(); } }));
+document.addEventListener("contextmenu",e=>{ if(pasteGuardActive()){ e.preventDefault(); showPasteToast(); } });
+/* ---------- init ---------- */
+route();
+if(typeof cloudBoot==="function") cloudBoot();
+</script>
+</body>
+</html>
